@@ -32,6 +32,7 @@
 #include <QRegularExpression>
 #include <QStringList>
 #include <QSysInfo>
+#include <QUrl>
 #include <QUuid>
 #include <cctype>
 
@@ -107,6 +108,9 @@ namespace Tools
 #endif
 #ifdef WITH_XC_TOUCHID
         extensions += "\n- " + QObject::tr("TouchID");
+#endif
+#ifdef WITH_XC_FDOSECRETS
+        extensions += "\n- " + QObject::tr("Secret Service Integration");
 #endif
 
         if (extensions.isEmpty())
@@ -254,6 +258,33 @@ namespace Tools
                 }
             } while (!timer.hasExpired(ms));
         }
+    }
+
+    bool checkUrlValid(const QString& urlField)
+    {
+        if (urlField.isEmpty()) {
+            return true;
+        }
+
+        QUrl url;
+        if (urlField.contains("://")) {
+            url = urlField;
+        } else {
+            url = QUrl::fromUserInput(urlField);
+        }
+
+        if (url.scheme() != "file" && url.host().isEmpty()) {
+            return false;
+        }
+
+        // Check for illegal characters. Adds also the wildcard * to the list
+        QRegularExpression re("[<>\\^`{|}\\*]");
+        auto match = re.match(urlField);
+        if (match.hasMatch()) {
+            return false;
+        }
+
+        return true;
     }
 
     // Escape common regex symbols except for *, ?, and |

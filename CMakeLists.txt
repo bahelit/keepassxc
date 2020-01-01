@@ -36,6 +36,7 @@ endif (CCACHE_FOUND)
 
 # Support Visual Studio Code
 include(CMakeToolsHelpers OPTIONAL)
+include(FeatureSummary)
 
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
@@ -94,7 +95,7 @@ endif()
 
 set(KEEPASSXC_VERSION_MAJOR "2")
 set(KEEPASSXC_VERSION_MINOR "5")
-set(KEEPASSXC_VERSION_PATCH "0")
+set(KEEPASSXC_VERSION_PATCH "1")
 set(KEEPASSXC_VERSION "${KEEPASSXC_VERSION_MAJOR}.${KEEPASSXC_VERSION_MINOR}.${KEEPASSXC_VERSION_PATCH}")
 set(OVERRIDE_VERSION "" CACHE STRING "Override the KeePassXC Version for Snapshot builds")
 
@@ -438,6 +439,14 @@ if(UNIX)
     int main() { prctl(PR_SET_DUMPABLE, 0); return 0; }"
             HAVE_PR_SET_DUMPABLE)
 
+    check_cxx_source_compiles("#include <malloc.h>
+    int main() { return 0; }"
+            HAVE_MALLOC_H)
+
+    check_cxx_source_compiles("#include <malloc.h>
+    int main() { malloc_usable_size(NULL, 0); return 0; }"
+            HAVE_MALLOC_USABLE_SIZE)
+
     check_cxx_source_compiles("#include <sys/resource.h>
     int main() {
       struct rlimit limit;
@@ -456,8 +465,6 @@ if(UNIX)
 endif()
 
 include_directories(SYSTEM ${GCRYPT_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
-
-include(FeatureSummary)
 
 add_subdirectory(src)
 add_subdirectory(share)

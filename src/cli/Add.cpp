@@ -45,7 +45,6 @@ const QCommandLineOption Add::GenerateOption = QCommandLineOption(QStringList() 
                                                                                 << "generate",
                                                                   QObject::tr("Generate a password for the entry."));
 
-
 Add::Add()
 {
     name = QString("add");
@@ -75,8 +74,7 @@ int Add::executeWithDatabase(QSharedPointer<Database> database, QSharedPointer<Q
     TextStream errorTextStream(Utils::STDERR, QIODevice::WriteOnly);
 
     const QStringList args = parser->positionalArguments();
-    const QString& databasePath = args.at(0);
-    const QString& entryPath = args.at(1);
+    auto& entryPath = args.at(1);
 
     // Cannot use those 2 options at the same time!
     if (parser->isSet(Add::GenerateOption) && parser->isSet(Add::PasswordPromptOption)) {
@@ -120,7 +118,7 @@ int Add::executeWithDatabase(QSharedPointer<Database> database, QSharedPointer<Q
     }
 
     QString errorMessage;
-    if (!database->save(databasePath, &errorMessage, true, false)) {
+    if (!database->save(&errorMessage, true, false)) {
         errorTextStream << QObject::tr("Writing the database failed %1.").arg(errorMessage) << endl;
         return EXIT_FAILURE;
     }

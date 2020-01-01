@@ -58,6 +58,15 @@ EntryPreviewWidget::EntryPreviewWidget(QWidget* parent)
     m_ui->entryAttachmentsWidget->setReadOnly(true);
     m_ui->entryAttachmentsWidget->setButtonsVisible(false);
 
+    // Match background of read-only text edit fields with the window
+    m_ui->entryPasswordLabel->setBackgroundRole(QPalette::Window);
+    m_ui->entryUsernameLabel->setBackgroundRole(QPalette::Window);
+    m_ui->entryNotesTextEdit->setBackgroundRole(QPalette::Window);
+    m_ui->groupNotesTextEdit->setBackgroundRole(QPalette::Window);
+    // Align notes text with label text
+    m_ui->entryNotesTextEdit->document()->setDocumentMargin(0);
+    m_ui->groupNotesTextEdit->document()->setDocumentMargin(0);
+
     connect(m_ui->entryUrlLabel, SIGNAL(linkActivated(QString)), SLOT(openEntryUrl()));
 
     connect(m_ui->entryTotpButton, SIGNAL(toggled(bool)), m_ui->entryTotpLabel, SLOT(setVisible(bool)));
@@ -72,6 +81,10 @@ EntryPreviewWidget::EntryPreviewWidget(QWidget* parent)
     m_ui->groupCloseButton->setIcon(filePath()->icon("actions", "dialog-close"));
     connect(m_ui->groupCloseButton, SIGNAL(clicked()), SLOT(hide()));
     connect(m_ui->groupTabWidget, SIGNAL(tabBarClicked(int)), SLOT(updateTabIndexes()), Qt::QueuedConnection);
+
+#if !defined(WITH_XC_KEESHARE)
+    removeTab(m_ui->groupTabWidget, m_ui->groupShareTab);
+#endif
 }
 
 EntryPreviewWidget::~EntryPreviewWidget()
@@ -168,47 +181,36 @@ void EntryPreviewWidget::updateEntryTotp()
 void EntryPreviewWidget::setPasswordVisible(bool state)
 {
     const QString password = m_currentEntry->resolveMultiplePlaceholders(m_currentEntry->password());
-    auto flags = m_ui->entryPasswordLabel->textInteractionFlags();
     if (state) {
-        m_ui->entryPasswordLabel->setRawText(password);
-        m_ui->entryPasswordLabel->setToolTip(password);
-        m_ui->entryPasswordLabel->setTextInteractionFlags(flags | Qt::TextSelectableByMouse);
+        m_ui->entryPasswordLabel->setText(password);
+        m_ui->entryPasswordLabel->setCursorPosition(0);
+    } else if (password.isEmpty() && config()->get("security/passwordemptynodots").toBool()) {
+        m_ui->entryPasswordLabel->setText("");
     } else {
-        m_ui->entryPasswordLabel->setTextInteractionFlags(flags & ~Qt::TextSelectableByMouse);
-        m_ui->entryPasswordLabel->setToolTip({});
-        if (password.isEmpty() && config()->get("security/passwordemptynodots").toBool()) {
-            m_ui->entryPasswordLabel->setRawText("");
-        } else {
-            m_ui->entryPasswordLabel->setRawText(QString("\u25cf").repeated(6));
-        }
+        m_ui->entryPasswordLabel->setText(QString("\u25cf").repeated(6));
     }
 }
 
 void EntryPreviewWidget::setEntryNotesVisible(bool state)
 {
-    setNotesVisible(m_ui->entryNotesLabel, m_currentEntry->notes(), state);
+    setNotesVisible(m_ui->entryNotesTextEdit, m_currentEntry->notes(), state);
 }
 
 void EntryPreviewWidget::setGroupNotesVisible(bool state)
 {
-    setNotesVisible(m_ui->groupNotesLabel, m_currentGroup->notes(), state);
+    setNotesVisible(m_ui->groupNotesTextEdit, m_currentGroup->notes(), state);
 }
 
-void EntryPreviewWidget::setNotesVisible(QLabel* notesLabel, const QString notes, bool state)
+void EntryPreviewWidget::setNotesVisible(QTextEdit* notesWidget, const QString& notes, bool state)
 {
-    auto flags = notesLabel->textInteractionFlags();
     if (state) {
-        notesLabel->setText(notes);
-        notesLabel->setToolTip(notes);
-        notesLabel->setTextInteractionFlags(flags | Qt::TextSelectableByMouse);
+        notesWidget->setPlainText(notes);
+        notesWidget->moveCursor(QTextCursor::Start);
+        notesWidget->ensureCursorVisible();
     } else {
-        if (notes.isEmpty()) {
-            notesLabel->setText("");
-        } else {
-            notesLabel->setText(QString("\u25cf").repeated(6));
+        if (!notes.isEmpty()) {
+            notesWidget->setPlainText(QString("\u25cf").repeated(6));
         }
-        notesLabel->setToolTip({});
-        notesLabel->setTextInteractionFlags(flags & ~Qt::TextSelectableByMouse);
     }
 }
 
@@ -216,12 +218,13 @@ void EntryPreviewWidget::updateEntryGeneralTab()
 {
     Q_ASSERT(m_currentEntry);
     m_ui->entryUsernameLabel->setText(m_currentEntry->resolveMultiplePlaceholders(m_currentEntry->username()));
+    m_ui->entryUsernameLabel->setCursorPosition(0);
 
     if (config()->get("security/HidePasswordPreviewPanel").toBool()) {
         // Hide password
         setPasswordVisible(false);
         // Show the password toggle button if there are dots in the label
-        m_ui->togglePasswordButton->setVisible(!m_ui->entryPasswordLabel->rawText().isEmpty());
+        m_ui->togglePasswordButton->setVisible(!m_ui->entryPasswordLabel->text().isEmpty());
         m_ui->togglePasswordButton->setChecked(false);
     } else {
         // Show password
@@ -231,7 +234,7 @@ void EntryPreviewWidget::updateEntryGeneralTab()
 
     if (config()->get("security/hidenotes").toBool()) {
         setEntryNotesVisible(false);
-        m_ui->toggleEntryNotesButton->setVisible(!m_ui->entryNotesLabel->text().isEmpty());
+        m_ui->toggleEntryNotesButton->setVisible(!m_ui->entryNotesTextEdit->toPlainText().isEmpty());
         m_ui->toggleEntryNotesButton->setChecked(false);
     } else {
         setEntryNotesVisible(true);
@@ -239,9 +242,9 @@ void EntryPreviewWidget::updateEntryGeneralTab()
     }
 
     if (config()->get("GUI/MonospaceNotes", false).toBool()) {
-        m_ui->entryNotesLabel->setFont(Font::fixedFont());
+        m_ui->entryNotesTextEdit->setFont(Font::fixedFont());
     } else {
-        m_ui->entryNotesLabel->setFont(Font::defaultFont());
+        m_ui->entryNotesTextEdit->setFont(Font::defaultFont());
     }
 
     m_ui->entryUrlLabel->setRawText(m_currentEntry->displayUrl());
@@ -327,7 +330,7 @@ void EntryPreviewWidget::updateGroupGeneralTab()
 
     if (config()->get("security/hidenotes").toBool()) {
         setGroupNotesVisible(false);
-        m_ui->toggleGroupNotesButton->setVisible(!m_ui->groupNotesLabel->text().isEmpty());
+        m_ui->toggleGroupNotesButton->setVisible(!m_ui->groupNotesTextEdit->toPlainText().isEmpty());
         m_ui->toggleGroupNotesButton->setChecked(false);
     } else {
         setGroupNotesVisible(true);
@@ -335,9 +338,9 @@ void EntryPreviewWidget::updateGroupGeneralTab()
     }
 
     if (config()->get("GUI/MonospaceNotes", false).toBool()) {
-        m_ui->groupNotesLabel->setFont(Font::fixedFont());
+        m_ui->groupNotesTextEdit->setFont(Font::fixedFont());
     } else {
-        m_ui->groupNotesLabel->setFont(Font::defaultFont());
+        m_ui->groupNotesTextEdit->setFont(Font::defaultFont());
     }
 }
 
@@ -376,6 +379,13 @@ void EntryPreviewWidget::openEntryUrl()
     if (m_currentEntry) {
         emit entryUrlActivated(m_currentEntry);
     }
+}
+
+void EntryPreviewWidget::removeTab(QTabWidget* tabWidget, QWidget* widget)
+{
+    const int tabIndex = tabWidget->indexOf(widget);
+    Q_ASSERT(tabIndex != -1);
+    tabWidget->removeTab(tabIndex);
 }
 
 void EntryPreviewWidget::setTabEnabled(QTabWidget* tabWidget, QWidget* widget, bool enabled)

@@ -142,10 +142,6 @@ MainWindow* getMainWindow()
 
 MainWindow::MainWindow()
     : m_ui(new Ui::MainWindow())
-    , m_trayIcon(nullptr)
-    , m_appExitCalled(false)
-    , m_appExiting(false)
-    , m_lastFocusOutTime(0)
 {
     g_MainWindow = this;
 
@@ -167,6 +163,24 @@ MainWindow::MainWindow()
     m_searchWidgetAction->setEnabled(false);
 
     m_countDefaultAttributes = m_ui->menuEntryCopyAttribute->actions().size();
+
+    m_entryContextMenu = new QMenu(this);
+    m_entryContextMenu->addAction(m_ui->actionEntryCopyUsername);
+    m_entryContextMenu->addAction(m_ui->actionEntryCopyPassword);
+    m_entryContextMenu->addAction(m_ui->menuEntryCopyAttribute->menuAction());
+    m_entryContextMenu->addAction(m_ui->menuEntryTotp->menuAction());
+    m_entryContextMenu->addSeparator();
+    m_entryContextMenu->addAction(m_ui->actionEntryAutoType);
+    m_entryContextMenu->addSeparator();
+    m_entryContextMenu->addAction(m_ui->actionEntryEdit);
+    m_entryContextMenu->addAction(m_ui->actionEntryClone);
+    m_entryContextMenu->addAction(m_ui->actionEntryDelete);
+    m_entryContextMenu->addSeparator();
+    m_entryContextMenu->addAction(m_ui->actionEntryOpenUrl);
+    m_entryContextMenu->addAction(m_ui->actionEntryDownloadIcon);
+
+    m_entryNewContextMenu = new QMenu(this);
+    m_entryNewContextMenu->addAction(m_ui->actionEntryNew);
 
     restoreGeometry(config()->get("GUI/MainWindowGeometry").toByteArray());
     restoreState(config()->get("GUI/MainWindowState").toByteArray());
@@ -273,6 +287,10 @@ MainWindow::MainWindow()
 
     connect(m_ui->menuEntries, SIGNAL(aboutToShow()), SLOT(obtainContextFocusLock()));
     connect(m_ui->menuEntries, SIGNAL(aboutToHide()), SLOT(releaseContextFocusLock()));
+    connect(m_entryContextMenu, SIGNAL(aboutToShow()), SLOT(obtainContextFocusLock()));
+    connect(m_entryContextMenu, SIGNAL(aboutToHide()), SLOT(releaseContextFocusLock()));
+    connect(m_entryNewContextMenu, SIGNAL(aboutToShow()), SLOT(obtainContextFocusLock()));
+    connect(m_entryNewContextMenu, SIGNAL(aboutToHide()), SLOT(releaseContextFocusLock()));
     connect(m_ui->menuGroups, SIGNAL(aboutToShow()), SLOT(obtainContextFocusLock()));
     connect(m_ui->menuGroups, SIGNAL(aboutToHide()), SLOT(releaseContextFocusLock()));
 
@@ -598,7 +616,9 @@ void MainWindow::setMenuActionState(DatabaseWidget::Mode mode)
             m_ui->actionEntryDelete->setEnabled(entriesSelected);
             m_ui->actionEntryCopyTitle->setEnabled(singleEntrySelected && dbWidget->currentEntryHasTitle());
             m_ui->actionEntryCopyUsername->setEnabled(singleEntrySelected && dbWidget->currentEntryHasUsername());
-            m_ui->actionEntryCopyPassword->setEnabled(singleEntrySelected && dbWidget->currentEntryHasPassword());
+            // NOTE: Copy password is enabled even if the selected entry's password is blank to prevent Ctrl+C
+            // from copying information from the currently selected cell in the entry view table.
+            m_ui->actionEntryCopyPassword->setEnabled(singleEntrySelected);
             m_ui->actionEntryCopyURL->setEnabled(singleEntrySelected && dbWidget->currentEntryHasUrl());
             m_ui->actionEntryCopyNotes->setEnabled(singleEntrySelected && dbWidget->currentEntryHasNotes());
             m_ui->menuEntryCopyAttribute->setEnabled(singleEntrySelected);
@@ -637,13 +657,33 @@ void MainWindow::setMenuActionState(DatabaseWidget::Mode mode)
         case DatabaseWidget::Mode::EditMode:
         case DatabaseWidget::Mode::ImportMode:
         case DatabaseWidget::Mode::LockedMode: {
-            const QList<QAction*> entryActions = m_ui->menuEntries->actions();
-            for (QAction* action : entryActions) {
-                action->setEnabled(false);
+            // Enable select actions when editing an entry
+            bool editEntryActive = dbWidget->isEntryEditActive();
+            const auto editEntryActionsMask = QList<QAction*>({m_ui->actionEntryCopyUsername,
+                                                               m_ui->actionEntryCopyPassword,
+                                                               m_ui->actionEntryCopyURL,
+                                                               m_ui->actionEntryOpenUrl,
+                                                               m_ui->actionEntryAutoType,
+                                                               m_ui->actionEntryDownloadIcon,
+                                                               m_ui->actionEntryCopyNotes,
+                                                               m_ui->actionEntryCopyTitle,
+                                                               m_ui->menuEntryCopyAttribute->menuAction(),
+                                                               m_ui->menuEntryTotp->menuAction(),
+                                                               m_ui->actionEntrySetupTotp});
+
+            auto entryActions = m_ui->menuEntries->actions();
+            entryActions << m_ui->menuEntryCopyAttribute->actions();
+            entryActions << m_ui->menuEntryTotp->actions();
+            for (auto action : entryActions) {
+                bool enabled = editEntryActive && editEntryActionsMask.contains(action);
+                if (action->menu()) {
+                    action->menu()->setEnabled(enabled);
+                }
+                action->setEnabled(enabled);
             }
 
-            const QList<QAction*> groupActions = m_ui->menuGroups->actions();
-            for (QAction* action : groupActions) {
+            const auto groupActions = m_ui->menuGroups->actions();
+            for (auto action : groupActions) {
                 action->setEnabled(false);
             }
 
@@ -664,13 +704,13 @@ void MainWindow::setMenuActionState(DatabaseWidget::Mode mode)
         }
         m_ui->actionDatabaseClose->setEnabled(true);
     } else {
-        const QList<QAction*> entryActions = m_ui->menuEntries->actions();
-        for (QAction* action : entryActions) {
+        const auto entryActions = m_ui->menuEntries->actions();
+        for (auto action : entryActions) {
             action->setEnabled(false);
         }
 
-        const QList<QAction*> groupActions = m_ui->menuGroups->actions();
-        for (QAction* action : groupActions) {
+        const auto groupActions = m_ui->menuGroups->actions();
+        for (auto action : groupActions) {
             action->setEnabled(false);
         }
 
@@ -845,8 +885,8 @@ void MainWindow::switchToPasswordGen(bool enabled)
     if (enabled) {
         m_ui->passwordGeneratorWidget->loadSettings();
         m_ui->passwordGeneratorWidget->regeneratePassword();
-        m_ui->passwordGeneratorWidget->setStandaloneMode(true);
         m_ui->stackedWidget->setCurrentIndex(PasswordGeneratorScreen);
+        m_ui->passwordGeneratorWidget->setStandaloneMode(true);
     } else {
         m_ui->passwordGeneratorWidget->saveSettings();
         switchToDatabases();
@@ -953,31 +993,29 @@ void MainWindow::toggleUsernamesHidden()
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    // ignore double close events (happens on macOS when closing from the dock)
     if (m_appExiting) {
         event->accept();
         return;
     }
 
-    // Don't ignore close event when the app is hidden to tray.
-    // This can occur when the OS issues close events on shutdown.
-    if (config()->get("GUI/MinimizeOnClose").toBool() && !isHidden() && !m_appExitCalled) {
+    // Ignore event and hide to tray if this is not an actual close
+    // request by the system's session manager.
+    if (config()->get("GUI/MinimizeOnClose").toBool() && !m_appExitCalled && !isHidden() && !qApp->isSavingSession()) {
         event->ignore();
         hideWindow();
         return;
     }
 
-    bool accept = saveLastDatabases();
-
-    if (accept) {
-        m_appExiting = true;
+    m_appExiting = saveLastDatabases();
+    if (m_appExiting) {
         saveWindowInformation();
-
         event->accept();
         QApplication::quit();
-    } else {
-        event->ignore();
+        return;
     }
+
+    m_appExitCalled = false;
+    event->ignore();
 }
 
 void MainWindow::changeEvent(QEvent* event)
@@ -1051,10 +1089,10 @@ void MainWindow::updateTrayIcon()
 #else
             menu->addAction(m_ui->actionQuit);
 
+#endif
             connect(m_trayIcon,
                     SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
                     SLOT(trayIconTriggered(QSystemTrayIcon::ActivationReason)));
-#endif
             connect(actionToggle, SIGNAL(triggered()), SLOT(toggleWindow()));
 
             m_trayIcon->setContextMenu(menu);
@@ -1088,7 +1126,17 @@ void MainWindow::releaseContextFocusLock()
 
 void MainWindow::showEntryContextMenu(const QPoint& globalPos)
 {
-    m_ui->menuEntries->popup(globalPos);
+    bool entrySelected = false;
+    auto dbWidget = m_ui->tabWidget->currentDatabaseWidget();
+    if (dbWidget) {
+        entrySelected = dbWidget->currentEntryHasFocus();
+    }
+
+    if (entrySelected) {
+        m_entryContextMenu->popup(globalPos);
+    } else {
+        m_entryNewContextMenu->popup(globalPos);
+    }
 }
 
 void MainWindow::showGroupContextMenu(const QPoint& globalPos)
@@ -1171,15 +1219,14 @@ void MainWindow::processTrayIconTrigger()
         toggleWindow();
     } else if (m_trayIconTriggerReason == QSystemTrayIcon::Trigger
                || m_trayIconTriggerReason == QSystemTrayIcon::MiddleClick) {
-        // Toggle window if hidden
-        // If on windows, check if focus switched within the last second because
-        // clicking the tray icon removes focus from main window
-        // If on Linux or macOS, check if the window is active
-        if (isHidden()
+        // Toggle window if is not in front.
 #ifdef Q_OS_WIN
-            || (Clock::currentSecondsSinceEpoch() - m_lastFocusOutTime) <= 1) {
+        // If on Windows, check if focus switched within the last second because
+        // clicking the tray icon removes focus from main window.
+        if (isHidden() || (Clock::currentSecondsSinceEpoch() - m_lastFocusOutTime) <= 1) {
 #else
-            || windowHandle()->isActive()) {
+        // If on Linux or macOS, check if the window has focus.
+        if (hasFocus() || isHidden() || windowHandle()->isActive()) {
 #endif
             toggleWindow();
         } else {

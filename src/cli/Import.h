@@ -15,17 +15,16 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEEPASSXC_EXTRACT_H
-#define KEEPASSXC_EXTRACT_H
+#ifndef KEEPASSXC_IMPORT_H
+#define KEEPASSXC_IMPORT_H
 
-#include "DatabaseCommand.h"
+#include "Command.h"
 
-class Extract : public DatabaseCommand
+class Import : public Command
 {
 public:
-    Extract();
-
-    int executeWithDatabase(QSharedPointer<Database> db, QSharedPointer<QCommandLineParser> parser) override;
+    Import();
+    int execute(const QStringList& arguments) override;
 };
 
-#endif // KEEPASSXC_EXTRACT_H
+#endif // KEEPASSXC_IMPORT_H

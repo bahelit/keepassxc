@@ -35,7 +35,7 @@ class KeePass1OpenWidget;
 class OpVaultOpenWidget;
 class DatabaseSettingsDialog;
 class Database;
-class DelayingFileWatcher;
+class FileWatcher;
 class EditEntryWidget;
 class EditGroupWidget;
 class Entry;
@@ -80,6 +80,8 @@ public:
     DatabaseWidget::Mode currentMode() const;
     bool isLocked() const;
     bool isSearchActive() const;
+    bool isEntryEditActive() const;
+    bool isGroupEditActive() const;
 
     QString getCurrentSearch();
     void refreshSearch();
@@ -108,8 +110,6 @@ public:
     bool currentEntryHasNotes();
     bool currentEntryHasTotp();
 
-    void blockAutoReload(bool block = true);
-
     QByteArray entryViewState() const;
     bool setEntryViewState(const QByteArray& state) const;
     QList<int> mainSplitterSizes() const;
@@ -133,7 +133,8 @@ signals:
     void currentModeChanged(DatabaseWidget::Mode mode);
     void groupChanged();
     void entrySelectionChanged();
-    void requestOpenDatabase(const QString& filePath, bool inBackground, const QString& password);
+    void
+    requestOpenDatabase(const QString& filePath, bool inBackground, const QString& password, const QString& keyFile);
     void databaseMerged(QSharedPointer<Database> mergedDb);
     void groupContextMenuRequested(const QPoint& globalPos);
     void entryContextMenuRequested(const QPoint& globalPos);
@@ -209,7 +210,6 @@ protected:
     void showEvent(QShowEvent* event) override;
 
 private slots:
-    void updateFilePath(const QString& filePath);
     void entryActivationSignalReceived(Entry* entry, EntryModel::ModelColumn column);
     void switchBackToEntryEdit();
     void switchToHistoryView(Entry* entry);
@@ -236,6 +236,7 @@ private:
     void processAutoOpen();
     bool confirmDeleteEntries(QList<Entry*> entries, bool permanent);
     void performIconDownloads(const QList<Entry*>& entries, bool force = false);
+    Entry* currentSelectedEntry();
 
     QSharedPointer<Database> m_db;
 
@@ -272,7 +273,6 @@ private:
     bool m_searchLimitGroup;
 
     // Autoreload
-    QPointer<DelayingFileWatcher> m_fileWatcher;
     bool m_blockAutoSave;
 };
 
