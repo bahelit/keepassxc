@@ -520,7 +520,7 @@ merge() {
     fi
     git diff-index --quiet HEAD --
     if [ $? -ne 0 ]; then
-        git add ./share/translations/*
+        git add -A ./share/translations/
         logInfo "Committing changes..."
         if [ "" == "$GPG_GIT_KEY" ]; then
             git commit -m "Update translations"
@@ -736,11 +736,8 @@ EOF
     local appimage_name="KeePassXC-x86_64.AppImage"
     if [ "" != "$RELEASE_NAME" ]; then
         appimage_name="KeePassXC-${RELEASE_NAME}-x86_64.AppImage"
+        echo "X-AppImage-Version=${RELEASE_NAME}" >> "$desktop_file"
     fi
-
-    # Allow appimagetool to insert version information into the AppImage to allow
-    # desktop integration tools to display that in app launchers
-    export VERSION="${RELEASE_NAME}"
 
     # Run appimagetool to package (and possibly sign) AppImage
     # --no-appstream is required, since it may crash on newer systems
@@ -987,13 +984,15 @@ build() {
             cpack -G "${CPACK_GENERATORS};${build_generators}"
 
             # Inject the portable config into the zip build and rename
+            touch .portable
             for filename in ${APP_NAME}-*.zip; do
                 logInfo "Creating portable zip file"
                 local folder=$(echo ${filename} | sed -r 's/(.*)\.zip/\1/')
                 python -c 'import zipfile,sys ; zipfile.ZipFile(sys.argv[1],"a").write(sys.argv[2],sys.argv[3])' \
-                    ${filename} ${SRC_DIR}/share/keepassxc.ini ${folder}/keepassxc.ini
+                    ${filename} .portable ${folder}/.portable
                 mv ${filename} ${folder}-portable.zip
             done
+            rm .portable
 
             mv "${APP_NAME}-"*.* ../
         else
@@ -1210,9 +1209,14 @@ appsign() {
                     exitError "Unpacking failed!"
                 fi
 
-                logInfo "Signing app..."
-                xcrun codesign --sign "${key}" --verbose --deep --entitlements \
-                    "${real_src_dir}/share/macosx/keepassxc.entitlements" ./app/KeePassXC.app
+                logInfo "Signing app bundle..."
+                xcrun codesign --sign "${key}" --verbose --deep --options runtime ./app/KeePassXC.app
+
+                # Sign main binary and libraries independently so we can keep using the convenient --deep
+                # option while avoiding adding entitlements recursively
+                logInfo "Signing main binary..."
+                xcrun codesign --sign "${key}" --verbose --force --options runtime --entitlements \
+                    "${real_src_dir}/share/macosx/keepassxc.entitlements" ./app/KeePassXC.app/Contents/MacOS/KeePassXC
 
                 if [ 0 -ne $? ]; then
                     cd "${orig_dir}"
