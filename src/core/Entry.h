@@ -36,6 +36,8 @@
 
 class Database;
 class Group;
+class PasswordHealth;
+
 namespace Totp
 {
     struct Settings;
@@ -66,6 +68,7 @@ struct EntryData
     QString defaultAutoTypeSequence;
     TimeInfo timeInfo;
     QSharedPointer<Totp::Settings> totpSettings;
+    QSharedPointer<PasswordHealth> passwordHealth;
 
     bool operator==(const EntryData& other) const;
     bool operator!=(const EntryData& other) const;
@@ -94,7 +97,7 @@ public:
     int autoTypeObfuscation() const;
     QString defaultAutoTypeSequence() const;
     QString effectiveAutoTypeSequence() const;
-    QString effectiveNewAutoTypeSequence() const;
+    QList<QString> autoTypeSequences(const QString& pattern = {}) const;
     AutoTypeAssociations* autoTypeAssociations();
     const AutoTypeAssociations* autoTypeAssociations() const;
     QString title() const;
@@ -106,8 +109,13 @@ public:
     QString notes() const;
     QString attribute(const QString& key) const;
     QString totp() const;
+    QString totpSettingsString() const;
     QSharedPointer<Totp::Settings> totpSettings() const;
     int size() const;
+    QString path() const;
+    const QSharedPointer<PasswordHealth>& passwordHealth();
+    bool excludeFromReports() const;
+    void setExcludeFromReports(bool state);
 
     bool hasTotp() const;
     bool isExpired() const;
@@ -123,11 +131,6 @@ public:
     const EntryAttachments* attachments() const;
     CustomData* customData();
     const CustomData* customData() const;
-
-    static const int DefaultIconNumber;
-    static const int ResolveMaximumDepth;
-    static const QString AutoTypeSequenceUsername;
-    static const QString AutoTypeSequencePassword;
 
     void setUuid(const QUuid& uuid);
     void setIcon(int iconNumber);
@@ -164,6 +167,8 @@ public:
         CloneNewUuid = 1, // generate a random uuid for the clone
         CloneResetTimeInfo = 2, // set all TimeInfo attributes to the current time
         CloneIncludeHistory = 4, // clone the history items
+        CloneDefault = CloneNewUuid | CloneResetTimeInfo,
+        CloneCopy = CloneNewUuid | CloneResetTimeInfo | CloneIncludeHistory,
         CloneRenameTitle = 8, // add "-Clone" after the original title
         CloneUserAsRef = 16, // Add the user as a reference to the original entry
         ClonePassAsRef = 32, // Add the password as a reference to the original entry
@@ -209,13 +214,18 @@ public:
         DbDir
     };
 
+    static const int DefaultIconNumber;
+    static const int ResolveMaximumDepth;
+    static const QString AutoTypeSequenceUsername;
+    static const QString AutoTypeSequencePassword;
+
     /**
      * Creates a duplicate of this entry except that the returned entry isn't
      * part of any group.
      * Note that you need to copy the custom icons manually when inserting the
      * new entry into another database.
      */
-    Entry* clone(CloneFlags flags) const;
+    Entry* clone(CloneFlags flags = CloneDefault) const;
     void copyDataFrom(const Entry* other);
     QString maskPasswordPlaceholders(const QString& str) const;
     Entry* resolveReference(const QString& str) const;

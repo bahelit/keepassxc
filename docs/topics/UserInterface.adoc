@@ -10,7 +10,7 @@ The KeePassXC interface is designed for simplicity and easy access to your infor
 .Main database interface
 image::main_interface.png[]
 
-*(A) Groups* - Organize your entries into discrete groups to bring order to all of your sensitive information. Groups can be nested under each other to create a hierarchy. Settings from parent groups get applied to their children.
+*(A) Groups* - Organize your entries into discrete groups to bring order to all of your sensitive information. Groups can be nested under each other to create a hierarchy. Settings from parent groups get applied to their children. You can hide this panel on the View menu.
 
 *(B) Entries* - Entries contain all the information for each website or application you are storing in KeePassXC. This view shows all the entries in the selected group. Each column can be resized, reordered, and shown or hidden based on your preference. Right click the header row to see all available options.
 
@@ -46,6 +46,51 @@ For users with smaller screens or those who desire seeing more entries at once, 
 .Compact mode comparison
 image::compact_mode_comparison.png[]
 
+==== Copy entry Columns on Double Click
+KeePassXC offers the possibility of copying certain entry columns, such as username and password, into your clipboard on double click, for a limited period of time.
+
+This feature can be enabled by checking the box "Enable double click to copy some entry columns" in the security settings:
+
+.Enable copying on double click
+image::enable_copy_dc.png[]
+
 === Keyboard Shortcuts
 include::KeyboardShortcuts.adoc[tag=content, leveloffset=+1]
+
+// tag::advanced[]
+=== Command-Line Options
+You can use the following command line options to tailor the application to your preferences:
+
+----
+Usage: keepassxc.exe [options] [filename(s)]
+KeePassXC - cross-platform password manager
+
+Options:
+  -?, -h, --help               Displays help on commandline options.
+  --help-all                   Displays help including Qt specific options.
+  -v, --version                Displays version information.
+  --config <config>            path to a custom config file
+  --localconfig <localconfig>  path to a custom local config file
+  --keyfile <keyfile>          key file of the database
+  --pw-stdin                   read password of the database from stdin
+  --debug-info                 Displays debugging information.
+
+Arguments:
+  filename(s)                  filenames of the password databases to open (*.kdbx)
+----
+
+Additionally, the following environment variables may be useful when running the application:
+
+[grid=rows, frame=none, width=75%]
+|===
+|Env Var                        | Description
+
+|KPXC_CONFIG                    | Override default path to roaming configuration file
+|KPXC_CONFIG_LOCAL              | Override default path to local configuration file
+|SSH_AUTH_SOCKET                | Path of the unix file socket that the agent uses for communication with other processes (SSH Agent)
+|QT_SCALE_FACTOR [numeric]      | Defines a global scale factor for the whole application, including point-sized fonts.
+|QT_SCREEN_SCALE_FACTORS [list] | Specifies scale factors for each screen. See https://doc.qt.io/qt-5/highdpi.html#high-dpi-support-in-qt
+|QT_SCALE_FACTOR_ROUNDING_POLICY | Control device pixel ratio rounding to the nearest integer. See https://doc.qt.io/qt-5/highdpi.html#high-dpi-support-in-qt
+|===
+// end::advanced[]
 // end::content[]

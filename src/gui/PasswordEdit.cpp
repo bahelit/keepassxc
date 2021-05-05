@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2014 Felix Geyer <debfx@fobos.de>
- *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
+ *  Copyright (C) 2020 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@
 #include "PasswordEdit.h"
 
 #include "core/Config.h"
-#include "core/Resources.h"
 #include "gui/Font.h"
+#include "gui/Icons.h"
 #include "gui/PasswordGeneratorWidget.h"
 #include "gui/osutils/OSUtils.h"
 #include "gui/styles/StateColorPalette.h"
@@ -33,12 +33,12 @@
 PasswordEdit::PasswordEdit(QWidget* parent)
     : QLineEdit(parent)
 {
-    const QIcon errorIcon = resources()->icon("dialog-error");
+    const QIcon errorIcon = icons()->icon("dialog-error");
     m_errorAction = addAction(errorIcon, QLineEdit::TrailingPosition);
     m_errorAction->setVisible(false);
     m_errorAction->setToolTip(tr("Passwords do not match"));
 
-    const QIcon correctIcon = resources()->icon("dialog-ok");
+    const QIcon correctIcon = icons()->icon("dialog-ok");
     m_correctAction = addAction(correctIcon, QLineEdit::TrailingPosition);
     m_correctAction->setVisible(false);
     m_correctAction->setToolTip(tr("Passwords match so far"));
@@ -58,9 +58,9 @@ PasswordEdit::PasswordEdit(QWidget* parent)
 #endif
 
     m_toggleVisibleAction = new QAction(
-        resources()->icon("password-show-off"),
+        icons()->onOffIcon("password-show", false),
         tr("Toggle Password (%1)").arg(QKeySequence(modifier + Qt::Key_H).toString(QKeySequence::NativeText)),
-        nullptr);
+        this);
     m_toggleVisibleAction->setCheckable(true);
     m_toggleVisibleAction->setShortcut(modifier + Qt::Key_H);
     m_toggleVisibleAction->setShortcutContext(Qt::WidgetShortcut);
@@ -68,18 +68,18 @@ PasswordEdit::PasswordEdit(QWidget* parent)
     connect(m_toggleVisibleAction, &QAction::triggered, this, &PasswordEdit::setShowPassword);
 
     m_passwordGeneratorAction = new QAction(
-        resources()->icon("password-generator"),
+        icons()->icon("password-generator"),
         tr("Generate Password (%1)").arg(QKeySequence(modifier + Qt::Key_G).toString(QKeySequence::NativeText)),
-        nullptr);
+        this);
     m_passwordGeneratorAction->setShortcut(modifier + Qt::Key_G);
     m_passwordGeneratorAction->setShortcutContext(Qt::WidgetShortcut);
     addAction(m_passwordGeneratorAction, QLineEdit::TrailingPosition);
     m_passwordGeneratorAction->setVisible(false);
 
     m_capslockAction =
-        new QAction(resources()->icon("dialog-warning", true, StateColorPalette().color(StateColorPalette::Error)),
+        new QAction(icons()->icon("dialog-warning", true, StateColorPalette().color(StateColorPalette::Error)),
                     tr("Warning: Caps Lock enabled!"),
-                    nullptr);
+                    this);
     addAction(m_capslockAction, QLineEdit::LeadingPosition);
     m_capslockAction->setVisible(false);
 }
@@ -113,7 +113,7 @@ void PasswordEdit::enablePasswordGenerator()
 void PasswordEdit::setShowPassword(bool show)
 {
     setEchoMode(show ? QLineEdit::Normal : QLineEdit::Password);
-    m_toggleVisibleAction->setIcon(resources()->icon(show ? "password-show-on" : "password-show-off"));
+    m_toggleVisibleAction->setIcon(icons()->onOffIcon("password-show", show));
     m_toggleVisibleAction->setChecked(show);
 
     if (m_repeatPasswordEdit) {
@@ -180,7 +180,9 @@ void PasswordEdit::autocompletePassword(const QString& password)
 
 bool PasswordEdit::event(QEvent* event)
 {
-    if (isVisible()) {
+    if (isVisible()
+        && (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease
+            || event->type() == QEvent::FocusIn)) {
         checkCapslockState();
     }
     return QLineEdit::event(event);
@@ -204,7 +206,9 @@ void PasswordEdit::checkCapslockState()
 
         if (newCapslockState) {
             QTimer::singleShot(
-                150, [this]() { QToolTip::showText(mapToGlobal(rect().bottomLeft()), m_capslockAction->text()); });
+                150, [this] { QToolTip::showText(mapToGlobal(rect().bottomLeft()), m_capslockAction->text()); });
+        } else if (QToolTip::isVisible()) {
+            QToolTip::hideText();
         }
     }
 }

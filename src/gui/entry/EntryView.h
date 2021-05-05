@@ -44,8 +44,6 @@ public:
     bool isSorted();
     int numberOfSelectedEntries();
     void setFirstEntryActive();
-    bool isUsernamesHidden() const;
-    bool isPasswordsHidden() const;
     QByteArray viewState() const;
     bool setViewState(const QByteArray& state);
 
@@ -57,10 +55,6 @@ signals:
     void entrySelectionChanged(Entry* entry);
     void viewStateChanged();
 
-public slots:
-    void setUsernamesHidden(bool hide);
-    void setPasswordsHidden(bool hide);
-
 protected:
     void keyPressEvent(QKeyEvent* event) override;
     void focusInEvent(QFocusEvent* event) override;
@@ -69,7 +63,6 @@ protected:
 
 private slots:
     void emitEntryActivated(const QModelIndex& index);
-    void emitEntrySelectionChanged();
     void showHeaderMenu(const QPoint& position);
     void toggleColumnVisibility(QAction* action);
     void fitColumnsToWindow();
@@ -80,17 +73,16 @@ private slots:
 
 private:
     void resetFixedColumns();
+    bool isColumnHidden(int logicalIndex);
 
     EntryModel* const m_model;
     SortFilterHideProxyModel* const m_sortModel;
     int m_lastIndex;
     Qt::SortOrder m_lastOrder;
-    bool m_inSearchMode;
+    bool m_inSearchMode = false;
     bool m_columnsNeedRelayout = true;
 
     QMenu* m_headerMenu;
-    QAction* m_hideUsernamesAction;
-    QAction* m_hidePasswordsAction;
     QActionGroup* m_columnActions;
 };
 

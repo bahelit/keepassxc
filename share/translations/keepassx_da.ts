@@ -54,27 +54,27 @@
     </message>
     <message>
         <source>Enable SSH Agent integration</source>
-        <translation type="unfinished"/>
+        <translation>Aktivér SSH-agent (kræver genstart)</translation>
     </message>
     <message>
         <source>SSH_AUTH_SOCK value</source>
-        <translation type="unfinished"/>
+        <translation>SSH_AUTH_SOCK-værdi</translation>
     </message>
     <message>
         <source>SSH_AUTH_SOCK override</source>
-        <translation type="unfinished"/>
+        <translation>SSH_AUTH_SOCK-overstyring</translation>
     </message>
     <message>
         <source>(empty)</source>
-        <translation type="unfinished"/>
+        <translation>(tom)</translation>
     </message>
     <message>
         <source>No SSH Agent socket available. Either make sure SSH_AUTH_SOCK environment variable exists or set an override.</source>
-        <translation type="unfinished"/>
+        <translation>Ingen SSH+agent socket tilgængelig. Sørg enten for at SSH_AUTH_SOCK eksisterer eller opsæt en overstyring.</translation>
     </message>
     <message>
         <source>SSH Agent connection is working!</source>
-        <translation type="unfinished"/>
+        <translation>SSH-agent-forbindelsen virker!</translation>
     </message>
 </context>
 <context>
@@ -117,22 +117,26 @@
     </message>
     <message>
         <source>Reset Settings?</source>
-        <translation type="unfinished"/>
+        <translation>Nulstil indstillingerne?</translation>
     </message>
     <message>
         <source>Are you sure you want to reset all general and security settings to default?</source>
-        <translation type="unfinished"/>
+        <translation>Er du sikker på at du vil nulstille alle generelle og sikkerhedsindstillinger til standardværdierne?</translation>
     </message>
     <message>
         <source>Monochrome (light)</source>
-        <translation type="unfinished"/>
+        <translation>Monokrom (lys)</translation>
     </message>
     <message>
         <source>Monochrome (dark)</source>
-        <translation type="unfinished"/>
+        <translation>Monokrom (mørk)</translation>
     </message>
     <message>
         <source>Colorful</source>
+        <translation>Farverig</translation>
+    </message>
+    <message>
+        <source>You must restart the application to set the new language. Would you like to restart now?</source>
         <translation type="unfinished"/>
     </message>
 </context>
@@ -165,10 +169,6 @@
     <message>
         <source>Automatically save after every change</source>
         <translation>Gem automatisk når der foretages ændringer</translation>
-    </message>
-    <message>
-        <source>Automatically save on exit</source>
-        <translation>Gem automatisk ved afslutning</translation>
     </message>
     <message>
         <source>Automatically reload the database when modified externally</source>
@@ -221,31 +221,31 @@
     </message>
     <message>
         <source>Remember previously used databases</source>
-        <translation type="unfinished"/>
+        <translation>Husk tidligere anvendte databaser</translation>
     </message>
     <message>
         <source>Load previously open databases on startup</source>
-        <translation type="unfinished"/>
+        <translation>Indlæs tidligere anvendte databaser ved opstart</translation>
     </message>
     <message>
         <source>Remember database key files and security dongles</source>
-        <translation type="unfinished"/>
+        <translation>Husk databasenøglefiler og sikkerhedsdongler</translation>
     </message>
     <message>
         <source>Check for updates at application startup once per week</source>
-        <translation type="unfinished"/>
+        <translation>Søg efter opdateringer ved programstart en gang ugentligt</translation>
     </message>
     <message>
         <source>Include beta releases when checking for updates</source>
-        <translation type="unfinished"/>
+        <translation>Medtag beta-udgivelser når der søges efter opdateringer</translation>
     </message>
     <message>
         <source>Language:</source>
-        <translation type="unfinished"/>
+        <translation>Sprog: </translation>
     </message>
     <message>
         <source>(restart program to activate)</source>
-        <translation type="unfinished"/>
+        <translation>(genstart program for at aktivere)</translation>
     </message>
     <message>
         <source>Minimize window after unlocking database</source>
@@ -305,10 +305,6 @@
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Mark database as modified for non-data changes (e.g., expanding groups)</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
         <source>Safely save database files (disable if experiencing problems with Dropbox, etc.)</source>
         <translation type="unfinished"/>
     </message>
@@ -342,6 +338,18 @@
     </message>
     <message>
         <source>Auto-Type start delay:</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <source>Automatically save when locking database</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <source>Automatically save non-data changes when locking database</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <source>Tray icon type</source>
         <translation type="unfinished"/>
     </message>
 </context>
@@ -4817,6 +4825,26 @@ Forvent nogle fejl og mindre problemer. Denne version er ikke beregnet til produ
         <source>You must restart the application to apply this setting. Would you like to restart now?</source>
         <translation type="unfinished"/>
     </message>
+    <message>
+        <source>Perform Auto-Type Sequence</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <source>{USERNAME}</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <source>{USERNAME}{ENTER}</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <source>{PASSWORD}</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <source>{PASSWORD}{ENTER}</source>
+        <translation type="unfinished"/>
+    </message>
 </context>
 <context>
     <name>ManageDatabase</name>
@@ -5301,10 +5329,6 @@ Forvent nogle fejl og mindre problemer. Denne version er ikke beregnet til produ
         <translation>Fremragende</translation>
     </message>
     <message>
-        <source>ExtendedASCII</source>
-        <translation>UdvidetASCII</translation>
-    </message>
-    <message>
         <source>Switch to advanced mode</source>
         <translation>Skift til avanceret tilstand</translation>
     </message>
@@ -5313,56 +5337,20 @@ Forvent nogle fejl og mindre problemer. Denne version er ikke beregnet til produ
         <translation>Avanceret</translation>
     </message>
     <message>
-        <source>A-Z</source>
-        <translation>A-Z</translation>
-    </message>
-    <message>
-        <source>a-z</source>
-        <translation>a-z</translation>
-    </message>
-    <message>
-        <source>0-9</source>
-        <translation>0-9</translation>
-    </message>
-    <message>
         <source>Braces</source>
         <translation>Parenteser</translation>
-    </message>
-    <message>
-        <source>{[(</source>
-        <translation>{[(</translation>
     </message>
     <message>
         <source>Punctuation</source>
         <translation>Tegnsætning</translation>
     </message>
     <message>
-        <source>.,:;</source>
-        <translation>.,:;</translation>
-    </message>
-    <message>
         <source>Quotes</source>
         <translation>Citationstegn</translation>
     </message>
     <message>
-        <source>&quot; &apos;</source>
-        <translation>&quot; &apos;</translation>
-    </message>
-    <message>
-        <source>&lt;*+!?=</source>
-        <translation>&lt;*+!?=</translation>
-    </message>
-    <message>
-        <source>\_|-/</source>
-        <translation>\_|-/</translation>
-    </message>
-    <message>
         <source>Logograms</source>
         <translation>Logogrammer</translation>
-    </message>
-    <message>
-        <source>#$%&amp;&amp;@^`~</source>
-        <translation>#$%&amp;&amp;@^`~</translation>
     </message>
     <message>
         <source>Character set to exclude from generated password</source>
@@ -5483,6 +5471,10 @@ Forvent nogle fejl og mindre problemer. Denne version er ikke beregnet til produ
     <message>
         <source>Regenerate password (%1)</source>
         <translation type="unfinished"/>
+    </message>
+    <message>
+        <source>Special Characters</source>
+        <translation>Specialtegn</translation>
     </message>
 </context>
 <context>

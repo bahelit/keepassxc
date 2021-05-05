@@ -18,7 +18,7 @@
 #include "ReportsPageHibp.h"
 
 #include "ReportsWidgetHibp.h"
-#include "core/Resources.h"
+#include "gui/Icons.h"
 
 #include <QApplication>
 
@@ -29,12 +29,12 @@ ReportsPageHibp::ReportsPageHibp()
 
 QString ReportsPageHibp::name()
 {
-    return QApplication::tr("HIBP");
+    return QObject::tr("HIBP");
 }
 
 QIcon ReportsPageHibp::icon()
 {
-    return resources()->icon("hibp");
+    return icons()->icon("hibp");
 }
 
 QWidget* ReportsPageHibp::createWidget()

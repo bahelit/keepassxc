@@ -104,11 +104,8 @@ public:
 
     QStringList customEntryAttributes() const;
     bool isEditWidgetModified() const;
-    bool isUsernamesHidden() const;
-    void setUsernamesHidden(bool hide);
-    bool isPasswordsHidden() const;
-    void setPasswordsHidden(bool hide);
     void clearAllWidgets();
+    Entry* currentSelectedEntry();
     bool currentEntryHasTitle();
     bool currentEntryHasUsername();
     bool currentEntryHasPassword();
@@ -166,9 +163,9 @@ public slots:
     void createEntry();
     void cloneEntry();
     void deleteSelectedEntries();
-    void deleteEntries(QList<Entry*> entries);
-    void focusOnEntries();
-    void focusOnGroups();
+    void deleteEntries(QList<Entry*> entries, bool confirm = true);
+    void focusOnEntries(bool editIfFocused = false);
+    void focusOnGroups(bool editIfFocused = false);
     void moveEntryUp();
     void moveEntryDown();
     void copyTitle();
@@ -185,7 +182,7 @@ public slots:
     void addToAgent();
     void removeFromAgent();
 #endif
-    void performAutoType();
+    void performAutoType(const QString& sequence = {});
     void performAutoTypeUsername();
     void performAutoTypeUsernameEnter();
     void performAutoTypePassword();
@@ -260,7 +257,7 @@ private:
     void openDatabaseFromEntry(const Entry* entry, bool inBackground = true);
     bool confirmDeleteEntries(QList<Entry*> entries, bool permanent);
     void performIconDownloads(const QList<Entry*>& entries, bool force = false);
-    Entry* currentSelectedEntry();
+    bool performSave(QString& errorMessage, const QString& fileName = {});
 
     QSharedPointer<Database> m_db;
 

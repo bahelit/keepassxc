@@ -36,11 +36,6 @@ const int Group::DefaultIconNumber = 48;
 const int Group::RecycleBinIconNumber = 43;
 const QString Group::RootAutoTypeSequence = "{USERNAME}{TAB}{PASSWORD}{ENTER}";
 
-Group::CloneFlags Group::DefaultCloneFlags =
-    static_cast<Group::CloneFlags>(Group::CloneNewUuid | Group::CloneResetTimeInfo | Group::CloneIncludeEntries);
-Entry::CloneFlags Group::DefaultEntryCloneFlags =
-    static_cast<Entry::CloneFlags>(Entry::CloneNewUuid | Entry::CloneResetTimeInfo);
-
 Group::Group()
     : m_customData(new CustomData(this))
     , m_updateTimeinfo(true)
@@ -362,11 +357,7 @@ void Group::setExpanded(bool expanded)
 {
     if (m_data.isExpanded != expanded) {
         m_data.isExpanded = expanded;
-        if (config()->get(Config::TrackNonDataChanges).toBool()) {
-            emit groupModified();
-        } else {
-            emit groupNonDataChange();
-        }
+        emit groupNonDataChange();
     }
 }
 
@@ -972,11 +963,7 @@ void Group::moveEntryUp(Entry* entry)
     emit entryAboutToMoveUp(row);
     m_entries.move(row, row - 1);
     emit entryMovedUp();
-    if (config()->get(Config::TrackNonDataChanges).toBool()) {
-        emit groupModified();
-    } else {
-        emit groupNonDataChange();
-    }
+    emit groupNonDataChange();
 }
 
 void Group::moveEntryDown(Entry* entry)
@@ -989,11 +976,7 @@ void Group::moveEntryDown(Entry* entry)
     emit entryAboutToMoveDown(row);
     m_entries.move(row, row + 1);
     emit entryMovedDown();
-    if (config()->get(Config::TrackNonDataChanges).toBool()) {
-        emit groupModified();
-    } else {
-        emit groupNonDataChange();
-    }
+    emit groupNonDataChange();
 }
 
 void Group::connectDatabaseSignalsRecursive(Database* db)

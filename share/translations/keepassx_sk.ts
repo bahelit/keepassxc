@@ -135,6 +135,10 @@
         <source>Colorful</source>
         <translation>Farebné</translation>
     </message>
+    <message>
+        <source>You must restart the application to set the new language. Would you like to restart now?</source>
+        <translation>Musíte reštartovať aplikáciu, aby sa tieto zmeny prejavili. Chcete ju reštartovať teraz?</translation>
+    </message>
 </context>
 <context>
     <name>ApplicationSettingsWidgetGeneral</name>
@@ -165,10 +169,6 @@
     <message>
         <source>Automatically save after every change</source>
         <translation>Automaticky uložiť po každej zmene</translation>
-    </message>
-    <message>
-        <source>Automatically save on exit</source>
-        <translation>Automaticky uložiť pri ukončení</translation>
     </message>
     <message>
         <source>Automatically reload the database when modified externally</source>
@@ -305,10 +305,6 @@
         <translation>Automaticky spustiť KeePassXC pri štarte systému</translation>
     </message>
     <message>
-        <source>Mark database as modified for non-data changes (e.g., expanding groups)</source>
-        <translation>Označovať databázu za zmenenú pri nedátových zmenách (napr. rozbalenie skupiny)</translation>
-    </message>
-    <message>
         <source>Safely save database files (disable if experiencing problems with Dropbox, etc.)</source>
         <translation>Bezpečne uložiť súbory databáz  (vypnite pri problémoch s Dropbox, apod)</translation>
     </message>
@@ -343,6 +339,18 @@
     <message>
         <source>Auto-Type start delay:</source>
         <translation>Oneskorenia spustenia Automatického vypĺňania:</translation>
+    </message>
+    <message>
+        <source>Automatically save when locking database</source>
+        <translation>Pri zamknutí databázy automaticky uložiť</translation>
+    </message>
+    <message>
+        <source>Automatically save non-data changes when locking database</source>
+        <translation>Pri zamknutí databázy automaticky uložiť nedátové zmeny</translation>
+    </message>
+    <message>
+        <source>Tray icon type</source>
+        <translation>Typ ikona oznamovacej oblasti</translation>
     </message>
 </context>
 <context>
@@ -948,7 +956,7 @@ chrome-laptop.</translation>
     </message>
     <message>
         <source>Select native messaging host folder location</source>
-        <translation type="unfinished"/>
+        <translation>Vyberte umiestnenie zložky hostiteľa správe medzi prehliadačom a KeePassXC</translation>
     </message>
 </context>
 <context>
@@ -4844,6 +4852,26 @@ Očakávajte chyby a menšie problémy, táto verzia nie je určená na produkč
         <source>You must restart the application to apply this setting. Would you like to restart now?</source>
         <translation>Musíte reštartovať aplikáciu, aby sa tieto zmeny prejavili. Chcete ju reštartovať teraz?</translation>
     </message>
+    <message>
+        <source>Perform Auto-Type Sequence</source>
+        <translation>Vykonať Automatické vypĺňanie</translation>
+    </message>
+    <message>
+        <source>{USERNAME}</source>
+        <translation>{POUŽÍVATEĽ}</translation>
+    </message>
+    <message>
+        <source>{USERNAME}{ENTER}</source>
+        <translation>{POUŽÍVATEĽ}{ENTER}</translation>
+    </message>
+    <message>
+        <source>{PASSWORD}</source>
+        <translation>{HESLO}</translation>
+    </message>
+    <message>
+        <source>{PASSWORD}{ENTER}</source>
+        <translation>{HESLO}{ENTER}</translation>
+    </message>
 </context>
 <context>
     <name>ManageDatabase</name>
@@ -5329,10 +5357,6 @@ Očakávajte chyby a menšie problémy, táto verzia nie je určená na produkč
         <translation>Výbroné</translation>
     </message>
     <message>
-        <source>ExtendedASCII</source>
-        <translation>Rozšírené ASCII</translation>
-    </message>
-    <message>
         <source>Switch to advanced mode</source>
         <translation>Prepnúť na pokročilý režim</translation>
     </message>
@@ -5341,56 +5365,20 @@ Očakávajte chyby a menšie problémy, táto verzia nie je určená na produkč
         <translation>Pokročilé</translation>
     </message>
     <message>
-        <source>A-Z</source>
-        <translation>A-Ž</translation>
-    </message>
-    <message>
-        <source>a-z</source>
-        <translation>a-ž</translation>
-    </message>
-    <message>
-        <source>0-9</source>
-        <translation>0-9</translation>
-    </message>
-    <message>
         <source>Braces</source>
         <translation>Zátvorky</translation>
-    </message>
-    <message>
-        <source>{[(</source>
-        <translation>{[(</translation>
     </message>
     <message>
         <source>Punctuation</source>
         <translation>Interpunkcia</translation>
     </message>
     <message>
-        <source>.,:;</source>
-        <translation>.,:;</translation>
-    </message>
-    <message>
         <source>Quotes</source>
         <translation>Úvodzovky</translation>
     </message>
     <message>
-        <source>&quot; &apos;</source>
-        <translation>&quot; &apos;</translation>
-    </message>
-    <message>
-        <source>&lt;*+!?=</source>
-        <translation>&lt;*+!?=</translation>
-    </message>
-    <message>
-        <source>\_|-/</source>
-        <translation>\_|-/</translation>
-    </message>
-    <message>
         <source>Logograms</source>
         <translation>Zástupné znaky</translation>
-    </message>
-    <message>
-        <source>#$%&amp;&amp;@^`~</source>
-        <translation>#$%&amp;&amp;@^`~</translation>
     </message>
     <message>
         <source>Character set to exclude from generated password</source>
@@ -5511,6 +5499,10 @@ Očakávajte chyby a menšie problémy, táto verzia nie je určená na produkč
     <message>
         <source>Regenerate password (%1)</source>
         <translation>Obnoviť heslo (%1)</translation>
+    </message>
+    <message>
+        <source>Special Characters</source>
+        <translation>Špeciálne znaky</translation>
     </message>
 </context>
 <context>
@@ -6387,7 +6379,7 @@ Jadro: %3 %4</translation>
     </message>
     <message>
         <source>Evaluating database entries against HIBP file, this will take a while...</source>
-        <translation type="unfinished"/>
+        <translation>Hodnotenie položiek databázy oproti súboru HIBP, bude to chvíľu trvať…</translation>
     </message>
     <message>
         <source>Close the currently opened database.</source>
@@ -6467,7 +6459,7 @@ Jadro: %3 %4</translation>
     </message>
     <message>
         <source>Only print the changes detected by the merge operation.</source>
-        <translation type="unfinished"/>
+        <translation>Vypisovať len zmeny zistený pri operácii zlúčenia.</translation>
     </message>
     <message>
         <source>Yubikey slot for the second database.</source>
@@ -6579,7 +6571,7 @@ Jadro: %3 %4</translation>
     </message>
     <message>
         <source>Could not save the native messaging script file for %1.</source>
-        <translation type="unfinished"/>
+        <translation>Nemožno uložiť súbor skriptu správ medzi prehliadačom a KeePassXC (native messaging) pre %1.</translation>
     </message>
     <message>
         <source>Copy the given attribute to the clipboard. Defaults to &quot;password&quot; if not specified.</source>
@@ -6647,7 +6639,7 @@ Jadro: %3 %4</translation>
     </message>
     <message>
         <source>Benchmarking key derivation function for %1ms delay.</source>
-        <translation type="unfinished"/>
+        <translation>meranie výkonu funkcie odvodenia kľúča pre %1ms trvanie.</translation>
     </message>
     <message>
         <source>Setting %1 rounds for key derivation function.</source>
@@ -6748,7 +6740,7 @@ Jadro: %3 %4</translation>
     </message>
     <message>
         <source>Benchmark %1 delay</source>
-        <translation type="unfinished"/>
+        <translation>Meranie výkonu %1 oneskorenie</translation>
     </message>
     <message numerus="yes">
         <source>%1 ms</source>
@@ -7253,7 +7245,7 @@ Jadro: %3 %4</translation>
     </message>
     <message>
         <source>Save current changes to activate the plugin and enable editing of this section.</source>
-        <translation type="unfinished"/>
+        <translation>Uložte aktuálne zmeny na aktiváciu zásuvného modulu a zapnutie úpravy tejto sekcie.</translation>
     </message>
 </context>
 <context>
@@ -7795,11 +7787,11 @@ Napríklad: JBSWY3DPEHPK3PXP</translation>
     <name>YubiKey</name>
     <message>
         <source>%1 [%2] Configured Slot - %3</source>
-        <translation type="unfinished"/>
+        <translation>%1 [%2] Nastavený slot – %3</translation>
     </message>
     <message>
         <source>%1 [%2] Challenge Response - Slot %3 - %4</source>
-        <translation type="unfinished"/>
+        <translation>%1[%2] Výzva – odpoveď – slot %3 – %4</translation>
     </message>
     <message>
         <source>Press</source>

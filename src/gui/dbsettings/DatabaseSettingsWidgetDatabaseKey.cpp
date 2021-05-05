@@ -32,7 +32,7 @@
 
 DatabaseSettingsWidgetDatabaseKey::DatabaseSettingsWidgetDatabaseKey(QWidget* parent)
     : DatabaseSettingsWidget(parent)
-    , m_additionalKeyOptionsToggle(new QPushButton(tr("Add additional protection..."), this))
+    , m_additionalKeyOptionsToggle(new QPushButton(tr("Add additional protection…"), this))
     , m_additionalKeyOptions(new QWidget(this))
     , m_passwordEditWidget(new PasswordEditWidget(this))
     , m_keyFileEditWidget(new KeyFileEditWidget(this))
@@ -216,8 +216,6 @@ void DatabaseSettingsWidgetDatabaseKey::setAdditionalKeyOptionsVisible(bool show
 {
     m_additionalKeyOptionsToggle->setVisible(!show);
     m_additionalKeyOptions->setVisible(show);
-    m_additionalKeyOptions->layout()->setSizeConstraint(QLayout::SetMinimumSize);
-    emit sizeChanged();
 }
 
 bool DatabaseSettingsWidgetDatabaseKey::addToCompositeKey(KeyComponentWidget* widget,

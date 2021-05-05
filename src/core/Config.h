@@ -42,6 +42,7 @@ public:
         AutoSaveAfterEveryChange,
         AutoReloadOnChange,
         AutoSaveOnExit,
+        AutoSaveNonDataChanges,
         BackupBeforeSave,
         UseAtomicSaves,
         SearchLimitGroup,
@@ -55,9 +56,9 @@ public:
         AutoTypeEntryURLMatch,
         AutoTypeDelay,
         AutoTypeStartDelay,
+        AutoTypeHideExpiredEntry,
         GlobalAutoTypeKey,
         GlobalAutoTypeModifiers,
-        TrackNonDataChanges,
         FaviconDownloadTimeout,
         UpdateCheckMessageShown,
         UseTouchID,
@@ -73,7 +74,9 @@ public:
         GUI_Language,
         GUI_HideToolbar,
         GUI_MovableToolbar,
+        GUI_HideGroupsPanel,
         GUI_HidePreviewPanel,
+        GUI_AlwaysOnTop,
         GUI_ToolButtonStyle,
         GUI_ShowTrayIcon,
         GUI_TrayIconAppearance,
@@ -81,6 +84,7 @@ public:
         GUI_MinimizeOnStartup,
         GUI_MinimizeOnClose,
         GUI_HideUsernames,
+        GUI_HidePasswords,
         GUI_AdvancedSettings,
         GUI_MonospaceNotes,
         GUI_ApplicationTheme,
@@ -116,13 +120,14 @@ public:
         Security_ResetTouchId,
         Security_ResetTouchIdTimeout,
         Security_ResetTouchIdScreenlock,
+        Security_NoConfirmMoveEntryToRecycleBin,
+        Security_EnableCopyOnDoubleClick,
 
         Browser_Enabled,
         Browser_ShowNotification,
         Browser_BestMatchOnly,
         Browser_UnlockDatabase,
         Browser_MatchUrlScheme,
-        Browser_SortByUsername,
         Browser_SupportBrowserProxy,
         Browser_UseCustomProxy,
         Browser_CustomProxyLocation,
@@ -147,7 +152,8 @@ public:
 
         FdoSecrets_Enabled,
         FdoSecrets_ShowNotification,
-        FdoSecrets_NoConfirmDeleteItem,
+        FdoSecrets_ConfirmDeleteItem,
+        FdoSecrets_ConfirmAccessItem,
 
         KeeShare_QuietSuccess,
         KeeShare_Own,
@@ -198,17 +204,18 @@ public:
     void resetToDefaults();
 
     static Config* instance();
-    static void createConfigFromFile(const QString& file);
+    static void createConfigFromFile(const QString& configFileName, const QString& localConfigFileName = {});
     static void createTempFileInstance();
 
 signals:
     void changed(ConfigKey key);
 
 private:
-    Config(const QString& fileName, QObject* parent = nullptr);
+    Config(const QString& configFileName, const QString& localConfigFileName, QObject* parent);
     explicit Config(QObject* parent);
-    void init(const QString& configFileName, const QString& localConfigFileName = "");
+    void init(const QString& configFileName, const QString& localConfigFileName);
     void migrate();
+    static QPair<QString, QString> defaultConfigFiles();
 
     static QPointer<Config> m_instance;
 

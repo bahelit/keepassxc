@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2010 Felix Geyer <debfx@fobos.de>
- *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
+ *  Copyright (C) 2020 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include <QMimeData>
 #include <QShortcut>
 #include <QTimer>
+#include <QToolButton>
 #include <QWindow>
 
 #include "config-keepassx.h"
@@ -37,8 +38,10 @@
 #include "core/Tools.h"
 #include "gui/AboutDialog.h"
 #include "gui/DatabaseWidget.h"
+#include "gui/Icons.h"
 #include "gui/MessageBox.h"
 #include "gui/SearchWidget.h"
+#include "gui/osutils/OSUtils.h"
 #include "keys/CompositeKey.h"
 #include "keys/FileKey.h"
 #include "keys/PasswordKey.h"
@@ -126,7 +129,6 @@ MainWindow::MainWindow()
     m_entryContextMenu->addAction(m_ui->menuEntryTotp->menuAction());
     m_entryContextMenu->addSeparator();
     m_entryContextMenu->addAction(m_ui->actionEntryAutoType);
-    m_entryContextMenu->addAction(m_ui->menuEntryAutoTypeWithSequence->menuAction());
     m_entryContextMenu->addSeparator();
     m_entryContextMenu->addAction(m_ui->actionEntryEdit);
     m_entryContextMenu->addAction(m_ui->actionEntryClone);
@@ -142,16 +144,29 @@ MainWindow::MainWindow()
     m_entryNewContextMenu = new QMenu(this);
     m_entryNewContextMenu->addAction(m_ui->actionEntryNew);
 
+    // Build Entry Level Auto-Type menu
+    auto autotypeMenu = new QMenu({}, this);
+    autotypeMenu->addAction(m_ui->actionEntryAutoTypeSequence);
+    autotypeMenu->addSeparator();
+    autotypeMenu->addAction(m_ui->actionEntryAutoTypeUsername);
+    autotypeMenu->addAction(m_ui->actionEntryAutoTypeUsernameEnter);
+    autotypeMenu->addAction(m_ui->actionEntryAutoTypePassword);
+    autotypeMenu->addAction(m_ui->actionEntryAutoTypePasswordEnter);
+    m_ui->actionEntryAutoType->setMenu(autotypeMenu);
+    auto autoTypeButton = qobject_cast<QToolButton*>(m_ui->toolBar->widgetForAction(m_ui->actionEntryAutoType));
+    if (autoTypeButton) {
+        autoTypeButton->setPopupMode(QToolButton::MenuButtonPopup);
+    }
+
     restoreGeometry(config()->get(Config::GUI_MainWindowGeometry).toByteArray());
     restoreState(config()->get(Config::GUI_MainWindowState).toByteArray());
+
+    connect(m_ui->tabWidget, &DatabaseTabWidget::databaseLocked, this, &MainWindow::databaseLocked);
+    connect(m_ui->tabWidget, &DatabaseTabWidget::databaseUnlocked, this, &MainWindow::databaseUnlocked);
+    connect(m_ui->tabWidget, &DatabaseTabWidget::activeDatabaseChanged, this, &MainWindow::activeDatabaseChanged);
+
 #ifdef WITH_XC_BROWSER
     m_ui->settingsWidget->addSettingsPage(new BrowserSettingsPage());
-    connect(m_ui->tabWidget, &DatabaseTabWidget::databaseLocked, browserService(), &BrowserService::databaseLocked);
-    connect(m_ui->tabWidget, &DatabaseTabWidget::databaseUnlocked, browserService(), &BrowserService::databaseUnlocked);
-    connect(m_ui->tabWidget,
-            &DatabaseTabWidget::activateDatabaseChanged,
-            browserService(),
-            &BrowserService::activeDatabaseChanged);
     connect(
         browserService(), &BrowserService::requestUnlock, m_ui->tabWidget, &DatabaseTabWidget::performBrowserUnlock);
 #endif
@@ -165,8 +180,8 @@ MainWindow::MainWindow()
     m_entryContextMenu->addAction(m_ui->actionEntryAddToAgent);
     m_entryContextMenu->addAction(m_ui->actionEntryRemoveFromAgent);
 
-    m_ui->actionEntryAddToAgent->setIcon(resources()->icon("utilities-terminal"));
-    m_ui->actionEntryRemoveFromAgent->setIcon(resources()->icon("utilities-terminal"));
+    m_ui->actionEntryAddToAgent->setIcon(icons()->icon("utilities-terminal"));
+    m_ui->actionEntryRemoveFromAgent->setIcon(icons()->icon("utilities-terminal"));
 #endif
 
     m_ui->actionEntryAddToAgent->setVisible(false);
@@ -196,7 +211,7 @@ MainWindow::MainWindow()
     connect(YubiKey::instance(), SIGNAL(challengeCompleted()), SLOT(hideYubiKeyPopup()), Qt::QueuedConnection);
 #endif
 
-    setWindowIcon(resources()->applicationIcon());
+    setWindowIcon(icons()->applicationIcon());
     m_ui->globalMessageWidget->hideMessage();
     connect(m_ui->globalMessageWidget, &MessageWidget::linkActivated, &MessageWidget::openHttpUrl);
 
@@ -221,12 +236,7 @@ MainWindow::MainWindow()
     m_ui->toolbarSeparator->setVisible(false);
     m_showToolbarSeparator = config()->get(Config::GUI_ApplicationTheme).toString() != "classic";
 
-    bool isAutoTypeAvailable = autoType()->isAvailable();
-    m_ui->actionEntryAutoType->setVisible(isAutoTypeAvailable);
-    m_ui->actionEntryAutoTypeUsername->setVisible(isAutoTypeAvailable);
-    m_ui->actionEntryAutoTypeUsernameEnter->setVisible(isAutoTypeAvailable);
-    m_ui->actionEntryAutoTypePassword->setVisible(isAutoTypeAvailable);
-    m_ui->actionEntryAutoTypePasswordEnter->setVisible(isAutoTypeAvailable);
+    m_ui->actionEntryAutoType->setVisible(autoType()->isAvailable());
 
     m_inactivityTimer = new InactivityTimer(this);
     connect(m_inactivityTimer, SIGNAL(inactivityDetected()), this, SLOT(lockDatabasesAfterInactivity()));
@@ -255,11 +265,18 @@ MainWindow::MainWindow()
     m_ui->actionEntryMoveDown->setShortcut(Qt::CTRL + Qt::ALT + Qt::Key_Down);
     m_ui->actionEntryCopyUsername->setShortcut(Qt::CTRL + Qt::Key_B);
     m_ui->actionEntryCopyPassword->setShortcut(Qt::CTRL + Qt::Key_C);
-    m_ui->actionEntryAutoType->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_V);
+    m_ui->actionEntryAutoTypeSequence->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_V);
     m_ui->actionEntryOpenUrl->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_U);
     m_ui->actionEntryCopyURL->setShortcut(Qt::CTRL + Qt::Key_U);
-    m_ui->actionEntryAddToAgent->setShortcut(Qt::CTRL + Qt::Key_H);
-    m_ui->actionEntryRemoveFromAgent->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_H);
+
+    // Prevent conflicts with global Mac shortcuts (force Control on all platforms)
+#ifdef Q_OS_MAC
+    auto modifier = Qt::META;
+#else
+    auto modifier = Qt::CTRL;
+#endif
+    m_ui->actionEntryAddToAgent->setShortcut(modifier + Qt::Key_H);
+    m_ui->actionEntryRemoveFromAgent->setShortcut(modifier + Qt::SHIFT + Qt::Key_H);
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     // Qt 5.10 introduced a new "feature" to hide shortcuts in context menus
@@ -275,7 +292,7 @@ MainWindow::MainWindow()
     m_ui->actionEntryMoveDown->setShortcutVisibleInContextMenu(true);
     m_ui->actionEntryCopyUsername->setShortcutVisibleInContextMenu(true);
     m_ui->actionEntryCopyPassword->setShortcutVisibleInContextMenu(true);
-    m_ui->actionEntryAutoType->setShortcutVisibleInContextMenu(true);
+    m_ui->actionEntryAutoTypeSequence->setShortcutVisibleInContextMenu(true);
     m_ui->actionEntryOpenUrl->setShortcutVisibleInContextMenu(true);
     m_ui->actionEntryCopyURL->setShortcutVisibleInContextMenu(true);
     m_ui->actionEntryAddToAgent->setShortcutVisibleInContextMenu(true);
@@ -295,9 +312,14 @@ MainWindow::MainWindow()
     new QShortcut(Qt::CTRL + Qt::Key_M, this, SLOT(minimizeOrHide()));
     new QShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_M, this, SLOT(hideWindow()));
     // Control database tabs
-    new QShortcut(Qt::CTRL + Qt::Key_Tab, this, SLOT(selectNextDatabaseTab()));
+    // Ctrl+Tab is broken on Mac, so use Alt (i.e. the Option key) - https://bugreports.qt.io/browse/QTBUG-8596
+    auto dbTabModifier2 = Qt::CTRL;
+#ifdef Q_OS_MACOS
+    dbTabModifier2 = Qt::ALT;
+#endif
+    new QShortcut(dbTabModifier2 + Qt::Key_Tab, this, SLOT(selectNextDatabaseTab()));
     new QShortcut(Qt::CTRL + Qt::Key_PageDown, this, SLOT(selectNextDatabaseTab()));
-    new QShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_Tab, this, SLOT(selectPreviousDatabaseTab()));
+    new QShortcut(dbTabModifier2 + Qt::SHIFT + Qt::Key_Tab, this, SLOT(selectPreviousDatabaseTab()));
     new QShortcut(Qt::CTRL + Qt::Key_PageUp, this, SLOT(selectPreviousDatabaseTab()));
 
     // Tab selection by number, Windows uses Ctrl, macOS uses Command,
@@ -325,71 +347,59 @@ MainWindow::MainWindow()
     shortcut = new QShortcut(dbTabModifier + Qt::Key_9, this);
     connect(shortcut, &QShortcut::activated, [this]() { selectDatabaseTab(m_ui->tabWidget->count() - 1); });
 
-    // Allow for direct focus of search, group view, and entry view
-    shortcut = new QShortcut(Qt::Key_F1, this);
-    connect(shortcut, SIGNAL(activated()), m_searchWidget, SLOT(searchFocus()));
-    shortcut = new QShortcut(Qt::Key_F2, this);
-    m_actionMultiplexer.connect(shortcut, SIGNAL(activated()), SLOT(focusOnGroups()));
-    shortcut = new QShortcut(Qt::Key_F3, this);
-    m_actionMultiplexer.connect(shortcut, SIGNAL(activated()), SLOT(focusOnEntries()));
+    m_ui->actionDatabaseNew->setIcon(icons()->icon("document-new"));
+    m_ui->actionDatabaseOpen->setIcon(icons()->icon("document-open"));
+    m_ui->menuRecentDatabases->setIcon(icons()->icon("document-open-recent"));
+    m_ui->actionDatabaseSave->setIcon(icons()->icon("document-save"));
+    m_ui->actionDatabaseSaveAs->setIcon(icons()->icon("document-save-as"));
+    m_ui->actionDatabaseSaveBackup->setIcon(icons()->icon("document-save-copy"));
+    m_ui->actionDatabaseClose->setIcon(icons()->icon("document-close"));
+    m_ui->actionReports->setIcon(icons()->icon("reports"));
+    m_ui->actionDatabaseSettings->setIcon(icons()->icon("document-edit"));
+    m_ui->actionDatabaseSecurity->setIcon(icons()->icon("database-change-key"));
+    m_ui->actionLockDatabases->setIcon(icons()->icon("database-lock"));
+    m_ui->actionQuit->setIcon(icons()->icon("application-exit"));
+    m_ui->actionDatabaseMerge->setIcon(icons()->icon("database-merge"));
+    m_ui->menuImport->setIcon(icons()->icon("document-import"));
+    m_ui->menuExport->setIcon(icons()->icon("document-export"));
 
-    // Toggle password and username visibility in entry view
-    new QShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_C, this, SLOT(togglePasswordsHidden()));
-    new QShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_B, this, SLOT(toggleUsernamesHidden()));
+    m_ui->actionEntryNew->setIcon(icons()->icon("entry-new"));
+    m_ui->actionEntryClone->setIcon(icons()->icon("entry-clone"));
+    m_ui->actionEntryEdit->setIcon(icons()->icon("entry-edit"));
+    m_ui->actionEntryDelete->setIcon(icons()->icon("entry-delete"));
+    m_ui->actionEntryAutoType->setIcon(icons()->icon("auto-type"));
+    m_ui->actionEntryAutoTypeSequence->setIcon(icons()->icon("auto-type"));
+    m_ui->actionEntryAutoTypeUsername->setIcon(icons()->icon("auto-type"));
+    m_ui->actionEntryAutoTypeUsernameEnter->setIcon(icons()->icon("auto-type"));
+    m_ui->actionEntryAutoTypePassword->setIcon(icons()->icon("auto-type"));
+    m_ui->actionEntryAutoTypePasswordEnter->setIcon(icons()->icon("auto-type"));
+    m_ui->actionEntryMoveUp->setIcon(icons()->icon("move-up"));
+    m_ui->actionEntryMoveDown->setIcon(icons()->icon("move-down"));
+    m_ui->actionEntryCopyUsername->setIcon(icons()->icon("username-copy"));
+    m_ui->actionEntryCopyPassword->setIcon(icons()->icon("password-copy"));
+    m_ui->actionEntryCopyURL->setIcon(icons()->icon("url-copy"));
+    m_ui->actionEntryDownloadIcon->setIcon(icons()->icon("favicon-download"));
+    m_ui->actionGroupSortAsc->setIcon(icons()->icon("sort-alphabetical-ascending"));
+    m_ui->actionGroupSortDesc->setIcon(icons()->icon("sort-alphabetical-descending"));
 
-    m_ui->actionDatabaseNew->setIcon(resources()->icon("document-new"));
-    m_ui->actionDatabaseOpen->setIcon(resources()->icon("document-open"));
-    m_ui->menuRecentDatabases->setIcon(resources()->icon("document-open-recent"));
-    m_ui->actionDatabaseSave->setIcon(resources()->icon("document-save"));
-    m_ui->actionDatabaseSaveAs->setIcon(resources()->icon("document-save-as"));
-    m_ui->actionDatabaseSaveBackup->setIcon(resources()->icon("document-save-copy"));
-    m_ui->actionDatabaseClose->setIcon(resources()->icon("document-close"));
-    m_ui->actionReports->setIcon(resources()->icon("reports"));
-    m_ui->actionDatabaseSettings->setIcon(resources()->icon("document-edit"));
-    m_ui->actionDatabaseSecurity->setIcon(resources()->icon("database-change-key"));
-    m_ui->actionLockDatabases->setIcon(resources()->icon("database-lock"));
-    m_ui->actionQuit->setIcon(resources()->icon("application-exit"));
-    m_ui->actionDatabaseMerge->setIcon(resources()->icon("database-merge"));
-    m_ui->menuImport->setIcon(resources()->icon("document-import"));
-    m_ui->menuExport->setIcon(resources()->icon("document-export"));
+    m_ui->actionGroupNew->setIcon(icons()->icon("group-new"));
+    m_ui->actionGroupEdit->setIcon(icons()->icon("group-edit"));
+    m_ui->actionGroupDelete->setIcon(icons()->icon("group-delete"));
+    m_ui->actionGroupEmptyRecycleBin->setIcon(icons()->icon("group-empty-trash"));
+    m_ui->actionEntryOpenUrl->setIcon(icons()->icon("web"));
+    m_ui->actionGroupDownloadFavicons->setIcon(icons()->icon("favicon-download"));
 
-    m_ui->actionEntryNew->setIcon(resources()->icon("entry-new"));
-    m_ui->actionEntryClone->setIcon(resources()->icon("entry-clone"));
-    m_ui->actionEntryEdit->setIcon(resources()->icon("entry-edit"));
-    m_ui->actionEntryDelete->setIcon(resources()->icon("entry-delete"));
-    m_ui->actionEntryAutoType->setIcon(resources()->icon("auto-type"));
-    m_ui->menuEntryAutoTypeWithSequence->setIcon(resources()->icon("auto-type"));
-    m_ui->actionEntryAutoTypeUsername->setIcon(resources()->icon("auto-type"));
-    m_ui->actionEntryAutoTypeUsernameEnter->setIcon(resources()->icon("auto-type"));
-    m_ui->actionEntryAutoTypePassword->setIcon(resources()->icon("auto-type"));
-    m_ui->actionEntryAutoTypePasswordEnter->setIcon(resources()->icon("auto-type"));
-    m_ui->actionEntryMoveUp->setIcon(resources()->icon("move-up"));
-    m_ui->actionEntryMoveDown->setIcon(resources()->icon("move-down"));
-    m_ui->actionEntryCopyUsername->setIcon(resources()->icon("username-copy"));
-    m_ui->actionEntryCopyPassword->setIcon(resources()->icon("password-copy"));
-    m_ui->actionEntryCopyURL->setIcon(resources()->icon("url-copy"));
-    m_ui->actionEntryDownloadIcon->setIcon(resources()->icon("favicon-download"));
-    m_ui->actionGroupSortAsc->setIcon(resources()->icon("sort-alphabetical-ascending"));
-    m_ui->actionGroupSortDesc->setIcon(resources()->icon("sort-alphabetical-descending"));
+    m_ui->actionSettings->setIcon(icons()->icon("configure"));
+    m_ui->actionPasswordGenerator->setIcon(icons()->icon("password-generator"));
 
-    m_ui->actionGroupNew->setIcon(resources()->icon("group-new"));
-    m_ui->actionGroupEdit->setIcon(resources()->icon("group-edit"));
-    m_ui->actionGroupDelete->setIcon(resources()->icon("group-delete"));
-    m_ui->actionGroupEmptyRecycleBin->setIcon(resources()->icon("group-empty-trash"));
-    m_ui->actionEntryOpenUrl->setIcon(resources()->icon("web"));
-    m_ui->actionGroupDownloadFavicons->setIcon(resources()->icon("favicon-download"));
-
-    m_ui->actionSettings->setIcon(resources()->icon("configure"));
-    m_ui->actionPasswordGenerator->setIcon(resources()->icon("password-generator"));
-
-    m_ui->actionAbout->setIcon(resources()->icon("help-about"));
-    m_ui->actionDonate->setIcon(resources()->icon("donate"));
-    m_ui->actionBugReport->setIcon(resources()->icon("bugreport"));
-    m_ui->actionGettingStarted->setIcon(resources()->icon("getting-started"));
-    m_ui->actionUserGuide->setIcon(resources()->icon("user-guide"));
-    m_ui->actionOnlineHelp->setIcon(resources()->icon("system-help"));
-    m_ui->actionKeyboardShortcuts->setIcon(resources()->icon("keyboard-shortcuts"));
-    m_ui->actionCheckForUpdates->setIcon(resources()->icon("system-software-update"));
+    m_ui->actionAbout->setIcon(icons()->icon("help-about"));
+    m_ui->actionDonate->setIcon(icons()->icon("donate"));
+    m_ui->actionBugReport->setIcon(icons()->icon("bugreport"));
+    m_ui->actionGettingStarted->setIcon(icons()->icon("getting-started"));
+    m_ui->actionUserGuide->setIcon(icons()->icon("user-guide"));
+    m_ui->actionOnlineHelp->setIcon(icons()->icon("system-help"));
+    m_ui->actionKeyboardShortcuts->setIcon(icons()->icon("keyboard-shortcuts"));
+    m_ui->actionCheckForUpdates->setIcon(icons()->icon("system-software-update"));
 
     m_actionMultiplexer.connect(
         SIGNAL(currentModeChanged(DatabaseWidget::Mode)), this, SLOT(setMenuActionState(DatabaseWidget::Mode)));
@@ -400,7 +410,7 @@ MainWindow::MainWindow()
 
     // Notify search when the active database changes or gets locked
     connect(m_ui->tabWidget,
-            SIGNAL(activateDatabaseChanged(DatabaseWidget*)),
+            SIGNAL(activeDatabaseChanged(DatabaseWidget*)),
             m_searchWidget,
             SLOT(databaseChanged(DatabaseWidget*)));
     connect(m_ui->tabWidget, SIGNAL(databaseLocked(DatabaseWidget*)), m_searchWidget, SLOT(databaseChanged()));
@@ -409,7 +419,6 @@ MainWindow::MainWindow()
     connect(m_ui->tabWidget, SIGNAL(currentChanged(int)), SLOT(updateWindowTitle()));
     connect(m_ui->tabWidget, SIGNAL(currentChanged(int)), SLOT(databaseTabChanged(int)));
     connect(m_ui->tabWidget, SIGNAL(currentChanged(int)), SLOT(setMenuActionState()));
-    connect(m_ui->tabWidget, SIGNAL(currentChanged(int)), SLOT(updateTrayIcon()));
     connect(m_ui->tabWidget, SIGNAL(databaseLocked(DatabaseWidget*)), SLOT(databaseStatusChanged(DatabaseWidget*)));
     connect(m_ui->tabWidget, SIGNAL(databaseUnlocked(DatabaseWidget*)), SLOT(databaseStatusChanged(DatabaseWidget*)));
     connect(m_ui->tabWidget, SIGNAL(tabVisibilityChanged(bool)), SLOT(updateToolbarSeparatorVisibility()));
@@ -457,6 +466,7 @@ MainWindow::MainWindow()
     m_actionMultiplexer.connect(m_ui->actionEntryCopyURL, SIGNAL(triggered()), SLOT(copyURL()));
     m_actionMultiplexer.connect(m_ui->actionEntryCopyNotes, SIGNAL(triggered()), SLOT(copyNotes()));
     m_actionMultiplexer.connect(m_ui->actionEntryAutoType, SIGNAL(triggered()), SLOT(performAutoType()));
+    m_actionMultiplexer.connect(m_ui->actionEntryAutoTypeSequence, SIGNAL(triggered()), SLOT(performAutoType()));
     m_actionMultiplexer.connect(
         m_ui->actionEntryAutoTypeUsername, SIGNAL(triggered()), SLOT(performAutoTypeUsername()));
     m_actionMultiplexer.connect(
@@ -502,11 +512,18 @@ MainWindow::MainWindow()
     connect(m_ui->actionOnlineHelp, SIGNAL(triggered()), SLOT(openOnlineHelp()));
     connect(m_ui->actionKeyboardShortcuts, SIGNAL(triggered()), SLOT(openKeyboardShortcuts()));
 
+    connect(osUtils, &OSUtilsBase::statusbarThemeChanged, this, &MainWindow::updateTrayIcon);
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    // Install event filter for empty-area drag
+    auto* eventFilter = new MainWindowEventFilter(this);
+    m_ui->menubar->installEventFilter(eventFilter);
+    m_ui->toolBar->installEventFilter(eventFilter);
+    m_ui->tabWidget->tabBar()->installEventFilter(eventFilter);
+#endif
+
 #ifdef Q_OS_MACOS
     setUnifiedTitleAndToolBarOnMac(true);
-    if (macUtils()->isDarkMode()) {
-        setStyleSheet("QToolButton {color:white;}");
-    }
 #endif
 
 #ifdef WITH_XC_UPDATECHECK
@@ -526,6 +543,11 @@ MainWindow::MainWindow()
 #ifndef WITH_XC_NETWORKING
     m_ui->actionGroupDownloadFavicons->setVisible(false);
     m_ui->actionEntryDownloadIcon->setVisible(false);
+#endif
+#ifndef WITH_XC_DOCS
+    m_ui->actionGettingStarted->setVisible(false);
+    m_ui->actionUserGuide->setVisible(false);
+    m_ui->actionKeyboardShortcuts->setVisible(false);
 #endif
 
     // clang-format off
@@ -551,6 +573,9 @@ MainWindow::MainWindow()
                                                MessageWidget::Error);
     }
 
+    // Properly shutdown on logoff, restart, and shutdown
+    connect(qApp, &QGuiApplication::commitDataRequest, this, [this] { m_appExitCalled = true; });
+
 #if defined(KEEPASSXC_BUILD_TYPE_SNAPSHOT) || defined(KEEPASSXC_BUILD_TYPE_PRE_RELEASE)
     auto* hidePreRelWarn = new QAction(tr("Don't show again for this version"), m_ui->globalMessageWidget);
     m_ui->globalMessageWidget->addAction(hidePreRelWarn);
@@ -568,7 +593,7 @@ MainWindow::MainWindow()
 #if defined(KEEPASSXC_BUILD_TYPE_SNAPSHOT)
     if (config()->get(Config::Messages_HidePreReleaseWarning) != KEEPASSXC_VERSION) {
         m_ui->globalMessageWidget->showMessage(
-            tr("WARNING: You are using an unstable build of KeePassXC!\n"
+            tr("WARNING: You are using an unstable build of KeePassXC.\n"
                "There is a high risk of corruption, maintain a backup of your databases.\n"
                "This version is not meant for production use."),
             MessageWidget::Warning,
@@ -577,25 +602,74 @@ MainWindow::MainWindow()
 #elif defined(KEEPASSXC_BUILD_TYPE_PRE_RELEASE)
     if (config()->get(Config::Messages_HidePreReleaseWarning) != KEEPASSXC_VERSION) {
         m_ui->globalMessageWidget->showMessage(
-            tr("NOTE: You are using a pre-release version of KeePassXC!\n"
-               "Expect some bugs and minor issues, this version is not meant for production use."),
+            tr("NOTE: You are using a pre-release version of KeePassXC.\n"
+               "Expect some bugs and minor issues, this version is meant for testing purposes."),
             MessageWidget::Information,
             -1);
     }
 #elif (QT_VERSION >= QT_VERSION_CHECK(5, 5, 0) && QT_VERSION < QT_VERSION_CHECK(5, 6, 0))
     if (!config()->get(Config::Messages_Qt55CompatibilityWarning).toBool()) {
         m_ui->globalMessageWidget->showMessage(
-            tr("WARNING: Your Qt version may cause KeePassXC to crash with an On-Screen Keyboard!\n"
+            tr("WARNING: Your Qt version may cause KeePassXC to crash with an On-Screen Keyboard.\n"
                "We recommend you use the AppImage available on our downloads page."),
             MessageWidget::Warning,
             -1);
         config()->set(Config::Messages_Qt55CompatibilityWarning, true);
     }
 #endif
+
+    connect(qApp, SIGNAL(anotherInstanceStarted()), this, SLOT(bringToFront()));
+    connect(qApp, SIGNAL(applicationActivated()), this, SLOT(bringToFront()));
+    connect(qApp, SIGNAL(openFile(QString)), this, SLOT(openDatabase(QString)));
+    connect(qApp, SIGNAL(quitSignalReceived()), this, SLOT(appExit()), Qt::DirectConnection);
+
+    statusBar()->setFixedHeight(24);
+    m_progressBarLabel = new QLabel(statusBar());
+    m_progressBarLabel->setVisible(false);
+    statusBar()->addPermanentWidget(m_progressBarLabel);
+    m_progressBar = new QProgressBar(statusBar());
+    m_progressBar->setVisible(false);
+    m_progressBar->setTextVisible(false);
+    m_progressBar->setMaximumWidth(100);
+    m_progressBar->setFixedHeight(15);
+    m_progressBar->setMaximum(100);
+    statusBar()->addPermanentWidget(m_progressBar);
+    connect(clipboard(), SIGNAL(updateCountdown(int, QString)), this, SLOT(updateProgressBar(int, QString)));
+
+    restoreConfigState();
 }
 
 MainWindow::~MainWindow()
 {
+#ifdef WITH_XC_SSHAGENT
+    sshAgent()->removeAllIdentities();
+#endif
+}
+
+/**
+ * Restore the main window's state after launch
+ */
+void MainWindow::restoreConfigState()
+{
+    // start minimized if configured
+    if (config()->get(Config::GUI_MinimizeOnStartup).toBool()) {
+        hideWindow();
+    } else {
+        bringToFront();
+    }
+
+    if (config()->get(Config::OpenPreviousDatabasesOnStartup).toBool()) {
+        const QStringList fileNames = config()->get(Config::LastOpenedDatabases).toStringList();
+        for (const QString& filename : fileNames) {
+            if (!filename.isEmpty() && QFile::exists(filename)) {
+                openDatabase(filename);
+            }
+        }
+        auto lastActiveFile = config()->get(Config::LastActiveDatabase).toString();
+        if (!lastActiveFile.isEmpty()) {
+            openDatabase(lastActiveFile);
+        }
+    }
 }
 
 QList<DatabaseWidget*> MainWindow::getOpenDatabases()
@@ -730,7 +804,11 @@ void MainWindow::setMenuActionState(DatabaseWidget::Mode mode)
             m_ui->menuEntryCopyAttribute->setEnabled(singleEntrySelected);
             m_ui->menuEntryTotp->setEnabled(singleEntrySelected);
             m_ui->actionEntryAutoType->setEnabled(singleEntrySelected);
-            m_ui->menuEntryAutoTypeWithSequence->setEnabled(singleEntrySelected);
+            m_ui->actionEntryAutoType->menu()->setEnabled(singleEntrySelected);
+            m_ui->actionEntryAutoTypeSequence->setText(
+                singleEntrySelected ? dbWidget->currentSelectedEntry()->effectiveAutoTypeSequence()
+                                    : Group::RootAutoTypeSequence);
+            m_ui->actionEntryAutoTypeSequence->setEnabled(singleEntrySelected);
             m_ui->actionEntryAutoTypeUsername->setEnabled(singleEntrySelected && dbWidget->currentEntryHasUsername());
             m_ui->actionEntryAutoTypeUsernameEnter->setEnabled(singleEntrySelected
                                                                && dbWidget->currentEntryHasUsername());
@@ -751,7 +829,9 @@ void MainWindow::setMenuActionState(DatabaseWidget::Mode mode)
             m_ui->actionGroupSortDesc->setEnabled(groupSelected && currentGroupHasChildren);
             m_ui->actionGroupEmptyRecycleBin->setVisible(recycleBinSelected);
             m_ui->actionGroupEmptyRecycleBin->setEnabled(recycleBinSelected);
+#ifdef WITH_XC_NETWORKING
             m_ui->actionGroupDownloadFavicons->setVisible(!recycleBinSelected);
+#endif
             m_ui->actionGroupDownloadFavicons->setEnabled(groupSelected && currentGroupHasEntries
                                                           && !recycleBinSelected);
             m_ui->actionDatabaseSecurity->setEnabled(true);
@@ -787,7 +867,6 @@ void MainWindow::setMenuActionState(DatabaseWidget::Mode mode)
                                                                m_ui->actionEntryCopyURL,
                                                                m_ui->actionEntryOpenUrl,
                                                                m_ui->actionEntryAutoType,
-                                                               m_ui->menuEntryAutoTypeWithSequence->menuAction(),
                                                                m_ui->actionEntryDownloadIcon,
                                                                m_ui->actionEntryCopyNotes,
                                                                m_ui->actionEntryCopyTitle,
@@ -919,11 +998,20 @@ void MainWindow::updateWindowTitle()
 
     setWindowTitle(windowTitle);
     setWindowModified(isModified);
+
+    updateTrayIcon();
 }
 
 void MainWindow::showAboutDialog()
 {
     auto* aboutDialog = new AboutDialog(this);
+    // Auto close the about dialog before attempting database locks
+    if (m_ui->tabWidget->currentDatabaseWidget()) {
+        connect(m_ui->tabWidget->currentDatabaseWidget(),
+                &DatabaseWidget::databaseLockRequested,
+                aboutDialog,
+                &AboutDialog::close);
+    }
     aboutDialog->open();
 }
 
@@ -1127,22 +1215,6 @@ void MainWindow::databaseTabChanged(int tabIndex)
     m_actionMultiplexer.setCurrentObject(m_ui->tabWidget->currentDatabaseWidget());
 }
 
-void MainWindow::togglePasswordsHidden()
-{
-    auto dbWidget = m_ui->tabWidget->currentDatabaseWidget();
-    if (dbWidget) {
-        dbWidget->setPasswordsHidden(!dbWidget->isPasswordsHidden());
-    }
-}
-
-void MainWindow::toggleUsernamesHidden()
-{
-    auto dbWidget = m_ui->tabWidget->currentDatabaseWidget();
-    if (dbWidget) {
-        dbWidget->setUsernamesHidden(!dbWidget->isUsernamesHidden());
-    }
-}
-
 void MainWindow::closeEvent(QCloseEvent* event)
 {
     if (m_appExiting) {
@@ -1175,8 +1247,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
 void MainWindow::changeEvent(QEvent* event)
 {
     if ((event->type() == QEvent::WindowStateChange) && isMinimized()) {
-        if (isTrayIconEnabled() && m_trayIcon && m_trayIcon->isVisible()
-            && config()->get(Config::GUI_MinimizeToTray).toBool()) {
+        if (isTrayIconEnabled() && config()->get(Config::GUI_MinimizeToTray).toBool()) {
             event->ignore();
             hide();
         }
@@ -1187,6 +1258,28 @@ void MainWindow::changeEvent(QEvent* event)
     } else {
         QMainWindow::changeEvent(event);
     }
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* event)
+{
+    if (!event->modifiers()) {
+        // Allow for direct focus of search, group view, and entry view
+        auto dbWidget = m_ui->tabWidget->currentDatabaseWidget();
+        if (dbWidget && dbWidget->isEntryViewActive()) {
+            if (event->key() == Qt::Key_F1) {
+                dbWidget->focusOnGroups(true);
+                return;
+            } else if (event->key() == Qt::Key_F2) {
+                dbWidget->focusOnEntries(true);
+                return;
+            } else if (event->key() == Qt::Key_F3) {
+                m_searchWidget->searchFocus();
+                return;
+            }
+        }
+    }
+
+    QWidget::keyPressEvent(event);
 }
 
 bool MainWindow::focusNextPrevChild(bool next)
@@ -1254,49 +1347,70 @@ bool MainWindow::saveLastDatabases()
 
 void MainWindow::updateTrayIcon()
 {
-    if (isTrayIconEnabled()) {
+    if (config()->get(Config::GUI_ShowTrayIcon).toBool()) {
         if (!m_trayIcon) {
             m_trayIcon = new QSystemTrayIcon(this);
             auto* menu = new QMenu(this);
 
             auto* actionToggle = new QAction(tr("Toggle window"), menu);
             menu->addAction(actionToggle);
-            actionToggle->setIcon(resources()->icon("keepassxc-monochrome-dark"));
+            actionToggle->setIcon(icons()->icon("keepassxc-monochrome-dark"));
 
             menu->addAction(m_ui->actionLockDatabases);
 
 #ifdef Q_OS_MACOS
-            QAction* actionQuit = new QAction(tr("Quit KeePassXC"), menu);
-            menu->addAction(actionQuit);
-
+            auto actionQuit = new QAction(tr("Quit KeePassXC"), menu);
             connect(actionQuit, SIGNAL(triggered()), SLOT(appExit()));
+            menu->addAction(actionQuit);
 #else
             menu->addAction(m_ui->actionQuit);
-
 #endif
+            m_trayIcon->setContextMenu(menu);
+
             connect(m_trayIcon,
                     SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
                     SLOT(trayIconTriggered(QSystemTrayIcon::ActivationReason)));
             connect(actionToggle, SIGNAL(triggered()), SLOT(toggleWindow()));
-
-            m_trayIcon->setContextMenu(menu);
-
-            m_trayIcon->setIcon(resources()->trayIcon());
-            m_trayIcon->show();
         }
 
-        if (m_ui->tabWidget->count() == 0) {
-            m_trayIcon->setIcon(resources()->trayIcon());
-        } else if (m_ui->tabWidget->hasLockableDatabases()) {
-            m_trayIcon->setIcon(resources()->trayIconUnlocked());
+        if (m_ui->tabWidget->hasLockableDatabases()) {
+            m_trayIcon->setIcon(icons()->trayIconUnlocked());
         } else {
-            m_trayIcon->setIcon(resources()->trayIconLocked());
+            m_trayIcon->setIcon(icons()->trayIconLocked());
+        }
+
+        m_trayIcon->setToolTip(windowTitle().replace("[*]", isWindowModified() ? "*" : ""));
+        m_trayIcon->show();
+
+        if (!isTrayIconEnabled() || !QSystemTrayIcon::isSystemTrayAvailable()) {
+            // Try to show tray icon after 5 seconds, try 5 times
+            // This can happen if KeePassXC starts before the system tray is available
+            static int trayIconAttempts = 0;
+            if (trayIconAttempts < 5) {
+                QTimer::singleShot(5000, this, &MainWindow::updateTrayIcon);
+                ++trayIconAttempts;
+            }
         }
     } else {
         if (m_trayIcon) {
             m_trayIcon->hide();
             delete m_trayIcon;
         }
+    }
+
+    QApplication::setQuitOnLastWindowClosed(!isTrayIconEnabled());
+}
+
+void MainWindow::updateProgressBar(int percentage, QString message)
+{
+    if (percentage < 0) {
+        m_progressBar->setVisible(false);
+        m_progressBarLabel->setVisible(false);
+    } else {
+        m_progressBar->setValue(percentage);
+        m_progressBar->setVisible(true);
+        m_progressBarLabel->setText(message);
+        m_progressBarLabel->setVisible(true);
     }
 }
 
@@ -1525,13 +1639,15 @@ void MainWindow::toggleWindow()
     }
 }
 
+void MainWindow::closeModalWindow()
+{
+    if (qApp->modalWindow()) {
+        qApp->modalWindow()->close();
+    }
+}
+
 void MainWindow::lockDatabasesAfterInactivity()
 {
-    // ignore event if a modal dialog is open (such as a message box or file dialog)
-    if (QApplication::activeModalWidget()) {
-        return;
-    }
-
     m_ui->tabWidget->lockDatabases();
 }
 
@@ -1544,7 +1660,7 @@ void MainWindow::forgetTouchIDAfterInactivity()
 
 bool MainWindow::isTrayIconEnabled() const
 {
-    return config()->get(Config::GUI_ShowTrayIcon).toBool() && QSystemTrayIcon::isSystemTrayAvailable();
+    return m_trayIcon && m_trayIcon->isVisible();
 }
 
 void MainWindow::displayGlobalMessage(const QString& text,
@@ -1666,7 +1782,7 @@ void MainWindow::displayDesktopNotification(const QString& msg, QString title, i
     }
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
-    m_trayIcon->showMessage(title, msg, resources()->applicationIcon(), msTimeoutHint);
+    m_trayIcon->showMessage(title, msg, icons()->applicationIcon(), msTimeoutHint);
 #else
     m_trayIcon->showMessage(title, msg, QSystemTrayIcon::Information, msTimeoutHint);
 #endif
@@ -1708,8 +1824,10 @@ void MainWindow::initViewMenu()
 
     connect(themeActions, &QActionGroup::triggered, this, [this, theme](QAction* action) {
         config()->set(Config::GUI_ApplicationTheme, action->data());
-        if (action->data() != theme) {
+        if ((action->data() == "classic" || theme == "classic") && action->data() != theme) {
             restartApp(tr("You must restart the application to apply this setting. Would you like to restart now?"));
+        } else {
+            kpxcApp->applyTheme();
         }
     });
 
@@ -1728,8 +1846,78 @@ void MainWindow::initViewMenu()
         applySettingsChanges();
     });
 
+    m_ui->actionShowGroupsPanel->setChecked(!config()->get(Config::GUI_HideGroupsPanel).toBool());
+    connect(m_ui->actionShowGroupsPanel, &QAction::toggled, this, [](bool checked) {
+        config()->set(Config::GUI_HideGroupsPanel, !checked);
+    });
+
     m_ui->actionShowPreviewPanel->setChecked(!config()->get(Config::GUI_HidePreviewPanel).toBool());
     connect(m_ui->actionShowPreviewPanel, &QAction::toggled, this, [](bool checked) {
         config()->set(Config::GUI_HidePreviewPanel, !checked);
     });
+
+    connect(m_ui->actionAlwaysOnTop, &QAction::toggled, this, [this](bool checked) {
+        config()->set(Config::GUI_AlwaysOnTop, checked);
+        if (checked) {
+            setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+        } else {
+            setWindowFlags(windowFlags() & ~Qt::WindowStaysOnTopHint);
+        }
+        show();
+    });
+    // Set checked after connecting to act on a toggle in state (default state is unchecked)
+    m_ui->actionAlwaysOnTop->setChecked(config()->get(Config::GUI_AlwaysOnTop).toBool());
+
+    m_ui->actionHideUsernames->setChecked(config()->get(Config::GUI_HideUsernames).toBool());
+    connect(m_ui->actionHideUsernames, &QAction::toggled, this, [](bool checked) {
+        config()->set(Config::GUI_HideUsernames, checked);
+    });
+
+    m_ui->actionHidePasswords->setChecked(config()->get(Config::GUI_HidePasswords).toBool());
+    connect(m_ui->actionHidePasswords, &QAction::toggled, this, [](bool checked) {
+        config()->set(Config::GUI_HidePasswords, checked);
+    });
 }
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+
+MainWindowEventFilter::MainWindowEventFilter(QObject* parent)
+    : QObject(parent)
+{
+}
+
+/**
+ * MainWindow event filter to initiate empty-area drag on the toolbar, menubar, and tabbar.
+ */
+bool MainWindowEventFilter::eventFilter(QObject* watched, QEvent* event)
+{
+    auto* mainWindow = getMainWindow();
+    if (!mainWindow || !mainWindow->m_ui) {
+        return QObject::eventFilter(watched, event);
+    }
+
+    if (event->type() == QEvent::MouseButtonPress) {
+        if (watched == mainWindow->m_ui->menubar) {
+            auto* m = static_cast<QMouseEvent*>(event);
+            if (!mainWindow->m_ui->menubar->actionAt(m->pos())) {
+                mainWindow->windowHandle()->startSystemMove();
+                return false;
+            }
+        } else if (watched == mainWindow->m_ui->toolBar) {
+            if (!mainWindow->m_ui->toolBar->isMovable() || mainWindow->m_ui->toolBar->cursor() != Qt::SizeAllCursor) {
+                mainWindow->windowHandle()->startSystemMove();
+                return false;
+            }
+        } else if (watched == mainWindow->m_ui->tabWidget->tabBar()) {
+            auto* m = static_cast<QMouseEvent*>(event);
+            if (mainWindow->m_ui->tabWidget->tabBar()->tabAt(m->pos()) == -1) {
+                mainWindow->windowHandle()->startSystemMove();
+                return true;
+            }
+        }
+    }
+
+    return QObject::eventFilter(watched, event);
+}
+
+#endif

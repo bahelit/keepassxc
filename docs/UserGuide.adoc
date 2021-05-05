@@ -1,6 +1,5 @@
 = KeePassXC: User Guide
 KeePassXC Team <team@keepassxc.org>
-v2.6.0
 :data-uri:
 :homepage: https://keepassxc.org
 :icons: font
@@ -35,3 +34,5 @@ include::topics/AutoType.adoc[tags=*]
 include::topics/KeeShare.adoc[tags=*]
 
 include::topics/SSHAgent.adoc[tags=*]
+
+include::topics/Reference.adoc[tags=*]

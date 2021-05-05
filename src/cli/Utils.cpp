@@ -17,8 +17,13 @@
 
 #include "Utils.h"
 
+#include "core/Database.h"
+#include "core/EntryAttributes.h"
+#include "keys/CompositeKey.h"
+#include "keys/FileKey.h"
+#include "keys/PasswordKey.h"
 #ifdef WITH_XC_YUBIKEY
-#include "keys/YkChallengeResponseKeyCLI.h"
+#include "keys/YkChallengeResponseKey.h"
 #endif
 
 #ifdef Q_OS_WIN
@@ -30,7 +35,7 @@
 
 #include <QFileInfo>
 #include <QProcess>
-#include <QScopedPointer>
+#include <QTextStream>
 
 namespace Utils
 {
@@ -91,7 +96,7 @@ namespace Utils
     }
 
     QSharedPointer<Database> unlockDatabase(const QString& databaseFilename,
-                                            const bool isPasswordProtected,
+                                            bool isPasswordProtected,
                                             const QString& keyFilename,
                                             const QString& yubiKeySlot,
                                             bool quiet)
@@ -132,9 +137,9 @@ namespace Utils
                 return {};
             }
 
-            if (fileKey->type() != FileKey::Hashed) {
-                err << QObject::tr("WARNING: You are using a legacy key file format which may become\n"
-                                   "unsupported in the future.\n\n"
+            if (fileKey->type() != FileKey::KeePass2XMLv2 && fileKey->type() != FileKey::Hashed) {
+                err << QObject::tr("WARNING: You are using an old key file format which KeePassXC may\n"
+                                   "stop supporting in the future.\n\n"
                                    "Please consider generating a new key file.")
                     << endl;
             }
@@ -165,9 +170,14 @@ namespace Utils
                 }
             }
 
-            auto key = QSharedPointer<YkChallengeResponseKeyCLI>(new YkChallengeResponseKeyCLI(
-                {serial, slot}, QObject::tr("Please touch the button on your YubiKey to continue…"), err));
+            auto conn = QObject::connect(YubiKey::instance(), &YubiKey::userInteractionRequest, [&] {
+                err << QObject::tr("Please touch the button on your YubiKey to continue…") << "\n\n" << flush;
+            });
+
+            auto key = QSharedPointer<YkChallengeResponseKey>(new YkChallengeResponseKey({serial, slot}));
             compositeKey->addChallengeResponseKey(key);
+
+            QObject::disconnect(conn);
         }
 #else
         Q_UNUSED(yubiKeySlot);
@@ -191,6 +201,12 @@ namespace Utils
      */
     QString getPassword(bool quiet)
     {
+#ifdef __AFL_COMPILER
+        // Fuzz test build takes password from environment variable to
+        // allow non-interactive operation
+        const auto env = getenv("KEYPASSXC_AFL_PASSWORD");
+        return env ? env : "";
+#else
         auto& in = STDIN;
         auto& out = quiet ? DEVNULL : STDERR;
 
@@ -200,6 +216,7 @@ namespace Utils
         out << endl;
 
         return line;
+#endif // __AFL_COMPILER
     }
 
     /**
@@ -277,7 +294,7 @@ namespace Utils
 
         QStringList failedProgramNames;
 
-        for (auto prog : clipPrograms) {
+        for (const auto& prog : clipPrograms) {
             QScopedPointer<QProcess> clipProcess(new QProcess(nullptr));
 
             // Skip empty parts, otherwise the program may clip the empty string
@@ -291,7 +308,14 @@ namespace Utils
                 continue;
             }
 
-            if (clipProcess->write(text.toLatin1()) == -1) {
+#ifdef Q_OS_WIN
+            // Windows clip command only understands Unicode written as UTF-16
+            auto data = QByteArray::fromRawData(reinterpret_cast<const char*>(text.utf16()), text.size() * 2);
+            if (clipProcess->write(data) == -1) {
+#else
+            // Other platforms understand UTF-8
+            if (clipProcess->write(text.toUtf8()) == -1) {
+#endif
                 qDebug("Unable to write to process : %s", qPrintable(clipProcess->errorString()));
             }
             clipProcess->waitForBytesWritten();
@@ -364,4 +388,37 @@ namespace Utils
         return result;
     }
 
+    /**
+     * Load a key file from disk. When the path specified does not exist a
+     * new file will be generated. No folders will be generated so the parent
+     * folder of the specified file needs to exist
+     *
+     * If the key file cannot be loaded or created the function will fail.
+     *
+     * @param path Path to the key file to be loaded
+     * @param fileKey Resulting fileKey
+     * @return true if the key file was loaded succesfully
+     */
+    bool loadFileKey(const QString& path, QSharedPointer<FileKey>& fileKey)
+    {
+        auto& err = Utils::STDERR;
+        QString error;
+        fileKey = QSharedPointer<FileKey>(new FileKey());
+
+        if (!QFileInfo::exists(path)) {
+            fileKey->create(path, &error);
+
+            if (!error.isEmpty()) {
+                err << QObject::tr("Creating KeyFile %1 failed: %2").arg(path, error) << endl;
+                return false;
+            }
+        }
+
+        if (!fileKey->load(path, &error)) {
+            err << QObject::tr("Loading KeyFile %1 failed: %2").arg(path, error) << endl;
+            return false;
+        }
+
+        return true;
+    }
 } // namespace Utils

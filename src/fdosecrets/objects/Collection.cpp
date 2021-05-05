@@ -17,14 +17,15 @@
 
 #include "Collection.h"
 
+#include "fdosecrets/FdoSecretsPlugin.h"
 #include "fdosecrets/FdoSecretsSettings.h"
+#include "fdosecrets/dbus/DBusMgr.h"
 #include "fdosecrets/objects/Item.h"
 #include "fdosecrets/objects/Prompt.h"
 #include "fdosecrets/objects/Service.h"
 #include "fdosecrets/objects/Session.h"
 
 #include "core/Config.h"
-#include "core/Database.h"
 #include "core/Tools.h"
 #include "gui/DatabaseTabWidget.h"
 #include "gui/DatabaseWidget.h"
@@ -34,16 +35,19 @@
 
 namespace FdoSecrets
 {
+    Collection* Collection::Create(Service* parent, DatabaseWidget* backend)
+    {
+        return new Collection(parent, backend);
+    }
 
     Collection::Collection(Service* parent, DatabaseWidget* backend)
         : DBusObject(parent)
         , m_backend(backend)
         , m_exposedGroup(nullptr)
-        , m_registered(false)
     {
         // whenever the file path or the database object itself change, we do a full reload.
-        connect(backend, &DatabaseWidget::databaseFilePathChanged, this, &Collection::reloadBackend);
-        connect(backend, &DatabaseWidget::databaseReplaced, this, &Collection::reloadBackend);
+        connect(backend, &DatabaseWidget::databaseFilePathChanged, this, &Collection::reloadBackendOrDelete);
+        connect(backend, &DatabaseWidget::databaseReplaced, this, &Collection::reloadBackendOrDelete);
 
         // also remember to clear/populate the database when lock state changes.
         connect(backend, &DatabaseWidget::databaseUnlocked, this, &Collection::onDatabaseLockChanged);
@@ -56,37 +60,27 @@ namespace FdoSecrets
             }
             emit doneUnlockCollection(accepted);
         });
-
-        reloadBackend();
     }
 
-    void Collection::reloadBackend()
+    bool Collection::reloadBackend()
     {
-        if (m_registered) {
-            // delete all items
-            // this has to be done because the backend is actually still there, just we don't expose them
-            // NOTE: Do NOT use a for loop, because Item::doDelete will remove itself from m_items.
-            while (!m_items.isEmpty()) {
-                m_items.first()->doDelete();
-            }
-            cleanupConnections();
-
-            unregisterCurrentPath();
-            m_registered = false;
-        }
-
         Q_ASSERT(m_backend);
 
-        // make sure we have updated copy of the filepath, which is used to identify the database.
-        m_backendPath = m_backend->database()->filePath();
+        // delete all items
+        // this has to be done because the backend is actually still there, just we don't expose them
+        // NOTE: Do NOT use a for loop, because Item::doDelete will remove itself from m_items.
+        while (!m_items.isEmpty()) {
+            m_items.first()->doDelete();
+        }
+        cleanupConnections();
+        dbus()->unregisterObject(this);
 
-        // the database may not have a name (derived from filePath) yet, which may happen if it's newly created.
-        // defer the registration to next time a file path change happens.
-        if (!name().isEmpty()) {
-            registerWithPath(
-                QStringLiteral(DBUS_PATH_TEMPLATE_COLLECTION).arg(p()->objectPath().path(), encodePath(name())),
-                new CollectionAdaptor(this));
-            m_registered = true;
+        // make sure we have updated copy of the filepath, which is used to identify the database.
+        m_backendPath = m_backend->database()->canonicalFilePath();
+
+        // register the object, handling potentially duplicated name
+        if (!dbus()->registerObject(this)) {
+            return false;
         }
 
         // populate contents after expose on dbus, because items rely on parent's dbus object path
@@ -95,54 +89,67 @@ namespace FdoSecrets
         } else {
             cleanupConnections();
         }
+
+        emit collectionChanged();
+        return true;
     }
 
-    DBusReturn<void> Collection::ensureBackend() const
+    void Collection::reloadBackendOrDelete()
+    {
+        if (!reloadBackend()) {
+            doDelete();
+        }
+    }
+
+    DBusResult Collection::ensureBackend() const
     {
         if (!m_backend) {
-            return DBusReturn<>::Error(QStringLiteral(DBUS_ERROR_SECRET_NO_SUCH_OBJECT));
+            return DBusResult(DBUS_ERROR_SECRET_NO_SUCH_OBJECT);
         }
         return {};
     }
 
-    DBusReturn<void> Collection::ensureUnlocked() const
+    DBusResult Collection::ensureUnlocked() const
     {
         if (backendLocked()) {
-            return DBusReturn<>::Error(QStringLiteral(DBUS_ERROR_SECRET_IS_LOCKED));
+            return DBusResult(DBUS_ERROR_SECRET_IS_LOCKED);
         }
         return {};
     }
 
-    DBusReturn<const QList<Item*>> Collection::items() const
+    DBusResult Collection::items(QList<Item*>& items) const
     {
         auto ret = ensureBackend();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
-        return m_items;
+        items = m_items;
+        return {};
     }
 
-    DBusReturn<QString> Collection::label() const
+    DBusResult Collection::label(QString& label) const
     {
         auto ret = ensureBackend();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
 
         if (backendLocked()) {
-            return name();
+            label = name();
+        } else {
+            label = m_backend->database()->metadata()->name();
         }
-        return m_backend->database()->metadata()->name();
+        return {};
     }
 
-    DBusReturn<void> Collection::setLabel(const QString& label)
+    DBusResult Collection::setLabel(const QString& label)
     {
         auto ret = ensureBackend();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
         ret = ensureUnlocked();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
 
@@ -150,78 +157,87 @@ namespace FdoSecrets
         return {};
     }
 
-    DBusReturn<bool> Collection::locked() const
+    DBusResult Collection::locked(bool& locked) const
     {
         auto ret = ensureBackend();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
-        return backendLocked();
+        locked = backendLocked();
+        return {};
     }
 
-    DBusReturn<qulonglong> Collection::created() const
+    DBusResult Collection::created(qulonglong& created) const
     {
         auto ret = ensureBackend();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
         ret = ensureUnlocked();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
-        return static_cast<qulonglong>(m_backend->database()->rootGroup()->timeInfo().creationTime().toMSecsSinceEpoch()
-                                       / 1000);
+        created = static_cast<qulonglong>(
+            m_backend->database()->rootGroup()->timeInfo().creationTime().toMSecsSinceEpoch() / 1000);
+
+        return {};
     }
 
-    DBusReturn<qulonglong> Collection::modified() const
+    DBusResult Collection::modified(qulonglong& modified) const
     {
         auto ret = ensureBackend();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
         ret = ensureUnlocked();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
         // FIXME: there seems not to have a global modified time.
         // Use a more accurate time, considering all metadata, group, entry.
-        return static_cast<qulonglong>(
+        modified = static_cast<qulonglong>(
             m_backend->database()->rootGroup()->timeInfo().lastModificationTime().toMSecsSinceEpoch() / 1000);
+        return {};
     }
 
-    DBusReturn<PromptBase*> Collection::deleteCollection()
+    DBusResult Collection::remove(const DBusClientPtr& client, PromptBase*& prompt)
     {
         auto ret = ensureBackend();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
 
         // Delete means close database
-        auto prompt = new DeleteCollectionPrompt(service(), this);
+        prompt = PromptBase::Create<DeleteCollectionPrompt>(service(), this);
+        if (!prompt) {
+            return QDBusError::InternalError;
+        }
         if (backendLocked()) {
             // this won't raise a dialog, immediate execute
-            auto pret = prompt->prompt({});
-            if (pret.isError()) {
-                return pret;
+            ret = prompt->prompt(client, {});
+            if (ret.err()) {
+                return ret;
             }
             prompt = nullptr;
         }
         // defer the close to the prompt
-        return prompt;
+        return {};
     }
 
-    DBusReturn<const QList<Item*>> Collection::searchItems(const StringStringMap& attributes)
+    DBusResult Collection::searchItems(const StringStringMap& attributes, QList<Item*>& items)
     {
+        items.clear();
+
         auto ret = ensureBackend();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
         ret = ensureUnlocked();
-        if (ret.isError()) {
+        if (ret.err()) {
             // searchItems should work, whether `this` is locked or not.
             // however, we can't search items the same way as in gnome-keying,
             // because there's no database at all when locked.
-            return QList<Item*>{};
+            return {};
         }
 
         // shortcut logic for Uuid/Path attributes, as they can uniquely identify an item.
@@ -229,20 +245,18 @@ namespace FdoSecrets
             auto uuid = QUuid::fromRfc4122(QByteArray::fromHex(attributes.value(ItemAttributes::UuidKey).toLatin1()));
             auto entry = m_exposedGroup->findEntryByUuid(uuid);
             if (entry) {
-                return QList<Item*>{m_entryToItem.value(entry)};
-            } else {
-                return QList<Item*>{};
+                items += m_entryToItem.value(entry);
             }
+            return {};
         }
 
         if (attributes.contains(ItemAttributes::PathKey)) {
             auto path = attributes.value(ItemAttributes::PathKey);
             auto entry = m_exposedGroup->findEntryByPath(path);
             if (entry) {
-                return QList<Item*>{m_entryToItem.value(entry)};
-            } else {
-                return QList<Item*>{};
+                items += m_entryToItem.value(entry);
             }
+            return {};
         }
 
         QList<EntrySearcher::SearchTerm> terms;
@@ -250,13 +264,12 @@ namespace FdoSecrets
             terms << attributeToTerm(it.key(), it.value());
         }
 
-        QList<Item*> items;
         const auto foundEntries = EntrySearcher(false, true).search(terms, m_exposedGroup);
         items.reserve(foundEntries.size());
         for (const auto& entry : foundEntries) {
             items << m_entryToItem.value(entry);
         }
-        return items;
+        return {};
     }
 
     EntrySearcher::SearchTerm Collection::attributeToTerm(const QString& key, const QString& value)
@@ -281,99 +294,58 @@ namespace FdoSecrets
         return term;
     }
 
-    DBusReturn<Item*>
-    Collection::createItem(const QVariantMap& properties, const SecretStruct& secret, bool replace, PromptBase*& prompt)
+    DBusResult Collection::createItem(const QVariantMap& properties,
+                                      const Secret& secret,
+                                      bool replace,
+                                      Item*& item,
+                                      PromptBase*& prompt)
     {
         auto ret = ensureBackend();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
         ret = ensureUnlocked();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
 
-        if (!pathToObject<Session>(secret.session)) {
-            return DBusReturn<>::Error(QStringLiteral(DBUS_ERROR_SECRET_NO_SESSION));
-        }
-
-        prompt = nullptr;
-
-        bool newlyCreated = true;
-        Item* item = nullptr;
+        item = nullptr;
         QString itemPath;
-        StringStringMap attributes;
 
-        auto iterAttr = properties.find(QStringLiteral(DBUS_INTERFACE_SECRET_ITEM ".Attributes"));
+        auto iterAttr = properties.find(DBUS_INTERFACE_SECRET_ITEM + ".Attributes");
         if (iterAttr != properties.end()) {
-            attributes = iterAttr.value().value<StringStringMap>();
+            // the actual value in iterAttr.value() is QDBusArgument, which represents a structure
+            // and qt has no idea what this corresponds to.
+            // we thus force a conversion to StringStringMap here. The conversion is registered in
+            // DBusTypes.cpp
+            auto attributes = iterAttr.value().value<StringStringMap>();
 
             itemPath = attributes.value(ItemAttributes::PathKey);
 
             // check existing item using attributes
-            auto existings = searchItems(attributes);
-            if (existings.isError()) {
-                return existings;
+            QList<Item*> existing;
+            ret = searchItems(attributes, existing);
+            if (ret.err()) {
+                return ret;
             }
-            if (!existings.value().isEmpty() && replace) {
-                item = existings.value().front();
-                newlyCreated = false;
-            }
-        }
-
-        if (!item) {
-            // normalize itemPath
-            itemPath = itemPath.startsWith('/') ? QString{} : QStringLiteral("/") + itemPath;
-
-            // split itemPath to groupPath and itemName
-            auto components = itemPath.split('/');
-            Q_ASSERT(components.size() >= 2);
-
-            auto itemName = components.takeLast();
-            Group* group = findCreateGroupByPath(components.join('/'));
-
-            // create new Entry in backend
-            auto* entry = new Entry();
-            entry->setUuid(QUuid::createUuid());
-            entry->setTitle(itemName);
-            entry->setUsername(m_backend->database()->metadata()->defaultUserName());
-            group->applyGroupIconOnCreateTo(entry);
-
-            entry->setGroup(group);
-
-            // when creation finishes in backend, we will already have item
-            item = m_entryToItem.value(entry, nullptr);
-
-            if (!item) {
-                // may happen if entry somehow ends up in recycle bin
-                return DBusReturn<>::Error(QStringLiteral(DBUS_ERROR_SECRET_NO_SUCH_OBJECT));
+            if (!existing.isEmpty() && replace) {
+                item = existing.front();
             }
         }
 
-        ret = item->setProperties(properties);
-        if (ret.isError()) {
-            if (newlyCreated) {
-                item->doDelete();
-            }
-            return ret;
+        prompt = PromptBase::Create<CreateItemPrompt>(service(), this, properties, secret, itemPath, item);
+        if (!prompt) {
+            return QDBusError::InternalError;
         }
-        ret = item->setSecret(secret);
-        if (ret.isError()) {
-            if (newlyCreated) {
-                item->doDelete();
-            }
-            return ret;
-        }
-
-        return item;
+        return {};
     }
 
-    DBusReturn<void> Collection::setProperties(const QVariantMap& properties)
+    DBusResult Collection::setProperties(const QVariantMap& properties)
     {
-        auto label = properties.value(QStringLiteral(DBUS_INTERFACE_SECRET_COLLECTION ".Label")).toString();
+        auto label = properties.value(DBUS_INTERFACE_SECRET_COLLECTION + ".Label").toString();
 
         auto ret = setLabel(label);
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
 
@@ -385,10 +357,10 @@ namespace FdoSecrets
         return m_aliases;
     }
 
-    DBusReturn<void> Collection::addAlias(QString alias)
+    DBusResult Collection::addAlias(QString alias)
     {
         auto ret = ensureBackend();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
 
@@ -400,20 +372,20 @@ namespace FdoSecrets
 
         emit aliasAboutToAdd(alias);
 
-        bool ok = QDBusConnection::sessionBus().registerObject(
-            QStringLiteral(DBUS_PATH_TEMPLATE_ALIAS).arg(p()->objectPath().path(), alias), this);
-        if (ok) {
+        if (dbus()->registerAlias(this, alias)) {
             m_aliases.insert(alias);
             emit aliasAdded(alias);
+        } else {
+            return QDBusError::InvalidObjectPath;
         }
 
         return {};
     }
 
-    DBusReturn<void> Collection::removeAlias(QString alias)
+    DBusResult Collection::removeAlias(QString alias)
     {
         auto ret = ensureBackend();
-        if (ret.isError()) {
+        if (ret.err()) {
             return ret;
         }
 
@@ -423,9 +395,7 @@ namespace FdoSecrets
             return {};
         }
 
-        QDBusConnection::sessionBus().unregisterObject(
-            QStringLiteral(DBUS_PATH_TEMPLATE_ALIAS).arg(p()->objectPath().path(), alias));
-
+        dbus()->unregisterAlias(alias);
         m_aliases.remove(alias);
         emit aliasRemoved(alias);
 
@@ -435,16 +405,15 @@ namespace FdoSecrets
     QString Collection::name() const
     {
         if (m_backendPath.isEmpty()) {
-            // This is a newly created db without saving to file.
-            // This name is also used to register dbus path.
-            // For simplicity, we don't monitor the name change.
-            // So the dbus object path is not updated if the db name
-            // changes. This should not be a problem because once the database
-            // gets saved, the dbus path will be updated to use filename and
-            // everything back to normal.
+            // This is a newly created db without saving to file,
+            // but we have to give a name, which is used to register dbus path.
+            // We use database name for this purpose. For simplicity, we don't monitor the name change.
+            // So the dbus object path is not updated if the db name changes.
+            // This should not be a problem because once the database gets saved,
+            // the dbus path will be updated to use filename and everything back to normal.
             return m_backend->database()->metadata()->name();
         }
-        return QFileInfo(m_backendPath).baseName();
+        return QFileInfo(m_backendPath).completeBaseName();
     }
 
     DatabaseWidget* Collection::backend() const
@@ -454,19 +423,16 @@ namespace FdoSecrets
 
     void Collection::onDatabaseLockChanged()
     {
-        auto locked = backendLocked();
-        if (!locked) {
-            populateContents();
-        } else {
-            cleanupConnections();
+        if (!reloadBackend()) {
+            doDelete();
+            return;
         }
-        emit collectionLockChanged(locked);
-        emit collectionChanged();
+        emit collectionLockChanged(backendLocked());
     }
 
     void Collection::populateContents()
     {
-        if (!m_registered) {
+        if (!m_backend) {
             return;
         }
 
@@ -534,6 +500,8 @@ namespace FdoSecrets
             onEntryAdded(entry, false);
         }
 
+        // Do not connect to databaseModified signal because we only want signals for the subset under m_exposedGroup
+        connect(m_backend->database()->metadata(), &Metadata::metadataModified, this, &Collection::collectionChanged);
         connectGroupSignalRecursive(m_exposedGroup);
     }
 
@@ -558,7 +526,7 @@ namespace FdoSecrets
             return;
         }
 
-        auto item = new Item(this, entry);
+        auto item = Item::Create(this, entry);
         m_items << item;
         m_entryToItem[entry] = item;
 
@@ -625,7 +593,8 @@ namespace FdoSecrets
 
         emit collectionAboutToDelete();
 
-        unregisterCurrentPath();
+        // remove from dbus early
+        dbus()->unregisterObject(this);
 
         // remove alias manually to trigger signal
         for (const auto& a : aliases()) {
@@ -643,6 +612,8 @@ namespace FdoSecrets
         // reset backend and delete self
         m_backend = nullptr;
         deleteLater();
+
+        // items will be removed automatically as they are children objects
     }
 
     void Collection::cleanupConnections()
@@ -674,7 +645,7 @@ namespace FdoSecrets
 
     void Collection::doDeleteEntries(QList<Entry*> entries)
     {
-        m_backend->deleteEntries(std::move(entries));
+        m_backend->deleteEntries(std::move(entries), FdoSecrets::settings()->confirmDeleteItem());
     }
 
     Group* Collection::findCreateGroupByPath(const QString& groupPath)
@@ -728,6 +699,38 @@ namespace FdoSecrets
     {
         Q_ASSERT(entry);
         return inRecycleBin(entry->group());
+    }
+
+    Item* Collection::doNewItem(const DBusClientPtr& client, QString itemPath)
+    {
+        Q_ASSERT(m_backend);
+
+        // normalize itemPath
+        itemPath = (itemPath.startsWith('/') ? QString{} : QStringLiteral("/")) + itemPath;
+
+        // split itemPath to groupPath and itemName
+        auto components = itemPath.split('/');
+        Q_ASSERT(components.size() >= 2);
+
+        auto itemName = components.takeLast();
+        Group* group = findCreateGroupByPath(components.join('/'));
+
+        // create new Entry in backend
+        auto* entry = new Entry();
+        entry->setUuid(QUuid::createUuid());
+        entry->setTitle(itemName);
+        entry->setUsername(m_backend->database()->metadata()->defaultUserName());
+        group->applyGroupIconOnCreateTo(entry);
+
+        entry->setGroup(group);
+
+        // the item was just created so there is no point in having it not authorized
+        client->setItemAuthorized(entry->uuid(), AuthDecision::Allowed);
+
+        // when creation finishes in backend, we will already have item
+        auto created = m_entryToItem.value(entry, nullptr);
+
+        return created;
     }
 
 } // namespace FdoSecrets

@@ -18,18 +18,18 @@
 #include "ReportsPageStatistics.h"
 
 #include "ReportsWidgetStatistics.h"
-#include "core/Resources.h"
+#include "gui/Icons.h"
 
 #include <QApplication>
 
 QString ReportsPageStatistics::name()
 {
-    return QApplication::tr("Statistics");
+    return QObject::tr("Statistics");
 }
 
 QIcon ReportsPageStatistics::icon()
 {
-    return Resources::instance()->icon("statistics");
+    return icons()->icon("statistics");
 }
 
 QWidget* ReportsPageStatistics::createWidget()

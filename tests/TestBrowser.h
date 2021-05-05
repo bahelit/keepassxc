@@ -40,20 +40,23 @@ private slots:
 
     void testBaseDomain();
     void testSortPriority();
+    void testSortPriority_data();
     void testSearchEntries();
+    void testSearchEntriesByPath();
+    void testSearchEntriesByUUID();
     void testSearchEntriesWithPort();
     void testSearchEntriesWithAdditionalURLs();
     void testInvalidEntries();
     void testSubdomainsAndPaths();
-    void testSortEntries();
     void testValidURLs();
     void testBestMatchingCredentials();
+    void testBestMatchingWithAdditionalURLs();
 
 private:
     QList<Entry*> createEntries(QStringList& urls, Group* root) const;
+    void compareEntriesByPath(QSharedPointer<Database> db, QList<Entry*> entries, QString path);
 
     QScopedPointer<BrowserAction> m_browserAction;
     QPointer<BrowserService> m_browserService;
 };
-
 #endif // KEEPASSXC_TESTBROWSER_H

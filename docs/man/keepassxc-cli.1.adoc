@@ -15,9 +15,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 = keepassxc-cli(1)
-:docdate: 2020-07-10
+KeePassXC Team <team@keepassxc.org>
+:docdate: 2020-08-31
 :doctype: manpage
-:revnumber: 2.6.0
 :mansource: KeePassXC {revnumber}
 :manmanual: General Commands Manual
 
@@ -38,14 +38,14 @@ It provides the ability to query and modify the entries of a KeePass database, d
   The same password generation options as documented for the generate command can be used when the *-g* option is set.
 
 *analyze* [_options_] <__database__>::
-  Analyzes passwords in a database for weaknesses.
+  Analyzes passwords in a database for weaknesses using offline HIBP SHA-1 hash lookup.
 
 *clip* [_options_] <__database__> <__entry__> [_timeout_]::
   Copies an attribute or the current TOTP (if the *-t* option is specified) of a database entry to the clipboard.
   If no attribute name is specified using the *-a* option, the password is copied.
   If multiple entries with the same name exist in different groups, only the attribute for the first one is copied.
   For copying the attribute of an entry in a specific group, the group path to the entry should be specified as well, instead of just the name.
-  Optionally, a timeout in seconds can be specified to automatically clear the clipboard.
+  Optionally, a timeout in seconds can be specified to automatically clear the clipboard, the default timeout is 10 seconds, set to 0 to disable.
 
 *close*::
   In interactive mode, closes the currently opened database (see *open*).
@@ -84,7 +84,12 @@ It provides the ability to query and modify the entries of a KeePass database, d
   Displays a list of available commands, or detailed information about the specified command.
 
 *import* [_options_] <__xml__> <__database__>::
-  Imports the contents of an XML database to the target database.
+  Imports the contents of an XML exported database to a new created database
+  with a password and/or key file.
+  The key file will be created if the file that is referred to does not exist.
+  If both the key file and password are empty, no database will be created.
+  The new database will be in kdbx 4 format.
+
 
 *locate* [_options_] <__database__> <__term__>::
   Locates all the entries that match a specific search term in a database.
@@ -177,6 +182,9 @@ The same password generation options as documented for the generate command can 
 *--url* <__url__>::
   Specifies the URL of the entry.
 
+*--notes* <__notes__>::
+  Specifies the notes of the entry.
+
 *-p*, *--password-prompt*::
   Uses a password prompt for the entry's password.
 
@@ -197,6 +205,10 @@ The same password generation options as documented for the generate command can 
   Such files are available from https://haveibeenpwned.com/Passwords;
   note that they are large, and so this operation typically takes some time (minutes up to an hour or so).
 
+*--okon* <__okon-cli path__>::
+  Use the specified okon-cli program to perform offline breach checks. You can obtain okon-cli from https://github.com/stryku/okon.
+  When using this option, *-H, --hibp* must point to a post-processed okon file (e.g. file.okon).
+
 === Clip options
 *-a*, *--attribute*::
   Copies the specified attribute to the clipboard.
@@ -208,7 +220,12 @@ The same password generation options as documented for the generate command can 
   Copies the current TOTP instead of the specified attribute to the clipboard.
   Will report an error if no TOTP is configured for the entry.
 
-=== Create options
+*-b*, *--best*::
+  Try to find and copy to clipboard a unique entry matching the input (similar to *-locate*)
+  If a unique matching entry is found it will be copied to the clipboard.
+  If multiple entries are found they will be listed to refine the search. (no clip performed)
+
+=== Create and Import options
 *-k*, *--set-key-file* <__path__>::
   Set the key file for the database.
 
@@ -292,11 +309,11 @@ The same password generation options as documented for the generate command can 
   Include characters from every selected group.
   [Default: Disabled]
 
-include::section-notes.adoc[]
+include::includes/section-notes.adoc[]
 
 == AUTHOR
 This manual page was originally written by Manolis Agkopian <m.agkopian@gmail.com>.
 
-include::section-reporting-bugs.adoc[]
+include::includes/section-reporting-bugs.adoc[]
 
-include::section-copyright.adoc[]
+include::includes/section-copyright.adoc[]

@@ -21,10 +21,10 @@
 
 #include "core/Config.h"
 #include "core/Database.h"
-#include "core/Resources.h"
 #include "crypto/Random.h"
 #include "format/KeePass2Reader.h"
 #include "gui/FileDialog.h"
+#include "gui/Icons.h"
 #include "gui/MainWindow.h"
 #include "gui/MessageBox.h"
 #include "keys/FileKey.h"
@@ -71,16 +71,10 @@ DatabaseOpenWidget::DatabaseOpenWidget(QWidget* parent)
     connect(m_ui->buttonBox, SIGNAL(accepted()), SLOT(openDatabase()));
     connect(m_ui->buttonBox, SIGNAL(rejected()), SLOT(reject()));
 
-    m_ui->hardwareKeyLabelHelp->setIcon(resources()->icon("system-help").pixmap(QSize(12, 12)));
+    m_ui->hardwareKeyLabelHelp->setIcon(icons()->icon("system-help").pixmap(QSize(12, 12)));
     connect(m_ui->hardwareKeyLabelHelp, SIGNAL(clicked(bool)), SLOT(openHardwareKeyHelp()));
-    m_ui->keyFileLabelHelp->setIcon(resources()->icon("system-help").pixmap(QSize(12, 12)));
+    m_ui->keyFileLabelHelp->setIcon(icons()->icon("system-help").pixmap(QSize(12, 12)));
     connect(m_ui->keyFileLabelHelp, SIGNAL(clicked(bool)), SLOT(openKeyFileHelp()));
-
-    connect(m_ui->keyFileLineEdit, SIGNAL(textChanged(QString)), SLOT(keyFileTextChanged()));
-    m_ui->keyFileLineEdit->addAction(m_ui->keyFileClearIcon, QLineEdit::TrailingPosition);
-    m_ui->keyFileClearIcon->setIcon(resources()->icon("edit-clear-locationbar-rtl"));
-    m_ui->keyFileClearIcon->setVisible(false);
-    connect(m_ui->keyFileClearIcon, SIGNAL(triggered(bool)), SLOT(clearKeyFileText()));
 
 #ifdef WITH_XC_YUBIKEY
     m_ui->hardwareKeyProgress->setVisible(false);
@@ -145,8 +139,6 @@ void DatabaseOpenWidget::load(const QString& filename)
     m_filename = filename;
     m_ui->fileNameLabel->setRawText(m_filename);
 
-    m_ui->keyFileClearIcon->setVisible(false);
-
     if (config()->get(Config::RememberLastKeyFiles).toBool()) {
         auto lastKeyFiles = config()->get(Config::LastKeyFiles).toHash();
         if (lastKeyFiles.contains(m_filename)) {
@@ -173,6 +165,7 @@ void DatabaseOpenWidget::clearForms()
     m_ui->editPassword->setText("");
     m_ui->editPassword->setShowPassword(false);
     m_ui->keyFileLineEdit->clear();
+    m_ui->keyFileLineEdit->setShowPassword(false);
     m_ui->checkTouchID->setChecked(false);
     m_ui->challengeResponseCombo->clear();
     m_db.reset();
@@ -287,13 +280,14 @@ QSharedPointer<CompositeKey> DatabaseOpenWidget::buildDatabaseKey()
         databaseKey->clear();
 
         // try to get, decrypt and use PasswordKey
-        QSharedPointer<QByteArray> passwordKey = TouchID::getInstance().getKey(m_filename);
-        if (passwordKey != NULL) {
+        QByteArray passwordKey;
+        if (TouchID::getInstance().getKey(m_filename, passwordKey)) {
             // check if the user cancelled the operation
-            if (passwordKey.isNull())
+            if (passwordKey.isNull()) {
                 return QSharedPointer<CompositeKey>();
+            }
 
-            databaseKey->addKey(PasswordKey::fromRawKey(*passwordKey));
+            databaseKey->addKey(PasswordKey::fromRawKey(passwordKey));
         }
     }
 #endif
@@ -309,12 +303,14 @@ QSharedPointer<CompositeKey> DatabaseOpenWidget::buildDatabaseKey()
             m_ui->messageWidget->showMessage(tr("Failed to open key file: %1").arg(errorMsg), MessageWidget::Error);
             return {};
         }
-        if (key->type() != FileKey::Hashed && !config()->get(Config::Messages_NoLegacyKeyFileWarning).toBool()) {
+        if (key->type() != FileKey::KeePass2XMLv2 && key->type() != FileKey::Hashed
+            && !config()->get(Config::Messages_NoLegacyKeyFileWarning).toBool()) {
             QMessageBox legacyWarning;
-            legacyWarning.setWindowTitle(tr("Legacy key file format"));
-            legacyWarning.setText(tr("You are using a legacy key file format which may become\n"
-                                     "unsupported in the future.\n\n"
-                                     "Please consider generating a new key file."));
+            legacyWarning.setWindowTitle(tr("Old key file format"));
+            legacyWarning.setText(tr("You are using an old key file format which KeePassXC may<br>"
+                                     "stop supporting in the future.<br><br>"
+                                     "Please consider generating a new key file by going to:<br>"
+                                     "<strong>Database &gt; Database Security &gt; Change Key File.</strong><br>"));
             legacyWarning.setIcon(QMessageBox::Icon::Warning);
             legacyWarning.addButton(QMessageBox::Ok);
             legacyWarning.setDefaultButton(QMessageBox::Ok);
@@ -363,7 +359,7 @@ void DatabaseOpenWidget::reject()
 
 void DatabaseOpenWidget::browseKeyFile()
 {
-    QString filters = QString("%1 (*);;%2 (*.key)").arg(tr("All files"), tr("Key files"));
+    QString filters = QString("%1 (*);;%2 (*.keyx; *.key)").arg(tr("All files"), tr("Key files"));
     if (!config()->get(Config::RememberLastKeyFiles).toBool()) {
         fileDialog()->setNextForgetDialog();
     }
@@ -386,11 +382,7 @@ void DatabaseOpenWidget::browseKeyFile()
 void DatabaseOpenWidget::clearKeyFileText()
 {
     m_ui->keyFileLineEdit->clear();
-}
-
-void DatabaseOpenWidget::keyFileTextChanged()
-{
-    m_ui->keyFileClearIcon->setVisible(!m_ui->keyFileLineEdit->text().isEmpty());
+    m_ui->keyFileLineEdit->setShowPassword(false);
 }
 
 void DatabaseOpenWidget::pollHardwareKey()

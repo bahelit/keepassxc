@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
+ *  Copyright (C) 2020 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,23 +15,18 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cstdlib>
-#include <memory>
-
 #include <QCommandLineParser>
-#include <QCoreApplication>
-#include <QDir>
-#include <QScopedPointer>
+#include <QFileInfo>
 #include <QStringList>
 
-#include "cli/TextStream.h"
-#include <cli/Command.h>
-
+#include "Command.h"
 #include "DatabaseCommand.h"
 #include "Open.h"
+#include "TextStream.h"
 #include "Utils.h"
 #include "config-keepassx.h"
 #include "core/Bootstrap.h"
+#include "core/Metadata.h"
 #include "core/Tools.h"
 #include "crypto/Crypto.h"
 
@@ -158,15 +153,15 @@ void enterInteractiveMode(const QStringList& arguments)
 
         auto cmd = Commands::getCommand(args[0]);
         if (!cmd) {
-            err << QObject::tr("Unknown command %1").arg(args[0]) << "\n";
+            err << QObject::tr("Unknown command %1").arg(args[0]) << endl;
             continue;
         } else if (cmd->name == "quit" || cmd->name == "exit") {
             break;
         }
 
-        cmd->currentDatabase = currentDatabase;
+        cmd->currentDatabase.swap(currentDatabase);
         cmd->execute(args);
-        currentDatabase = cmd->currentDatabase;
+        currentDatabase.swap(cmd->currentDatabase);
     }
 
     if (currentDatabase) {
@@ -177,7 +172,7 @@ void enterInteractiveMode(const QStringList& arguments)
 int main(int argc, char** argv)
 {
     if (!Crypto::init()) {
-        qFatal("Fatal error while testing the cryptographic functions:\n%s", qPrintable(Crypto::errorString()));
+        qWarning("Fatal error while testing the cryptographic functions:\n%s", qPrintable(Crypto::errorString()));
         return EXIT_FAILURE;
     }
 
@@ -245,6 +240,10 @@ int main(int argc, char** argv)
     // Removing the first argument (keepassxc).
     arguments.removeFirst();
     int exitCode = command->execute(arguments);
+
+    if (command->currentDatabase) {
+        command->currentDatabase.reset();
+    }
 
 #if defined(WITH_ASAN) && defined(WITH_LSAN)
     // do leak check here to prevent massive tail of end-of-process leak errors from third-party libraries

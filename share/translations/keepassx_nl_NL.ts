@@ -125,15 +125,19 @@
     </message>
     <message>
         <source>Monochrome (light)</source>
-        <translation>Monochrome (licht)</translation>
+        <translation>Monochroom (licht)</translation>
     </message>
     <message>
         <source>Monochrome (dark)</source>
-        <translation>Monochrome (donker)</translation>
+        <translation>Monochroom (donker)</translation>
     </message>
     <message>
         <source>Colorful</source>
         <translation>Kleurrijk</translation>
+    </message>
+    <message>
+        <source>You must restart the application to set the new language. Would you like to restart now?</source>
+        <translation>Je moet de toepassing opnieuw starten om de nieuwe taal in te stellen. Wil je dat nu doen?</translation>
     </message>
 </context>
 <context>
@@ -167,10 +171,6 @@
         <translation>Automatisch opslaan na iedere wijziging</translation>
     </message>
     <message>
-        <source>Automatically save on exit</source>
-        <translation>Automatisch opslaan bij afsluiten</translation>
-    </message>
-    <message>
         <source>Automatically reload the database when modified externally</source>
         <translation>Database automatisch opnieuw laden als deze van buitenaf is gewijzigd</translation>
     </message>
@@ -180,7 +180,7 @@
     </message>
     <message>
         <source>Use group icon on entry creation</source>
-        <translation>Gebruik groepspictogram voor nieuwe items</translation>
+        <translation>Groepspictogram toepassen bij nieuwe items</translation>
     </message>
     <message>
         <source>Minimize instead of app exit</source>
@@ -305,10 +305,6 @@
         <translation>KeePassXC automatisch opstarten met het systeem</translation>
     </message>
     <message>
-        <source>Mark database as modified for non-data changes (e.g., expanding groups)</source>
-        <translation>Database markeren als gewijzigd voor niet-inhoudelijke aanpassingen (bijv. uitbreiding van groepen)</translation>
-    </message>
-    <message>
         <source>Safely save database files (disable if experiencing problems with Dropbox, etc.)</source>
         <translation>Databasebestanden veilig opslaan (uitschakelen bij problemen met Dropbox, enz.)</translation>
     </message>
@@ -344,6 +340,18 @@
         <source>Auto-Type start delay:</source>
         <translation>Auto-type startvertraging:</translation>
     </message>
+    <message>
+        <source>Automatically save when locking database</source>
+        <translation>Automatisch opslaan bij het vergrendelen van de database</translation>
+    </message>
+    <message>
+        <source>Automatically save non-data changes when locking database</source>
+        <translation>Automatisch niet-gegevens wijzigingen opslaan bij het vergrendelen van de database</translation>
+    </message>
+    <message>
+        <source>Tray icon type</source>
+        <translation>Systeemvak-pictogram</translation>
+    </message>
 </context>
 <context>
     <name>ApplicationSettingsWidgetSecurity</name>
@@ -370,7 +378,7 @@
     </message>
     <message>
         <source>Forget TouchID after inactivity of</source>
-        <translation>TouchID vergeten na inactiviteit van</translation>
+        <translation>Touch ID vergeten na inactiviteit van</translation>
     </message>
     <message>
         <source>Convenience</source>
@@ -382,7 +390,7 @@
     </message>
     <message>
         <source>Forget TouchID when session is locked or lid is closed</source>
-        <translation>TouchID vergeten wanneer sessie wordt vergrendeld of deksel wordt gesloten</translation>
+        <translation>Touch ID vergeten wanneer sessie wordt vergrendeld of deksel wordt gesloten</translation>
     </message>
     <message>
         <source>Lock databases after minimizing the window</source>
@@ -560,7 +568,7 @@
     </message>
     <message>
         <source>%1 is requesting access to the following entries:</source>
-        <translation>% 1 vraagt toegang tot de volgende vermeldingen:</translation>
+        <translation>%1 vraagt toegang tot de volgende vermeldingen:</translation>
     </message>
     <message>
         <source>Remember access to checked entries</source>
@@ -700,7 +708,8 @@ Wil je de bestaande instellingen nu migreren?</translation>
 
 Give the connection a unique name or ID, for example:
 chrome-laptop.</source>
-        <translation>Je hebt een associatieverzoek ontvangen voor de volgende database:%1
+        <translation>Je hebt een associatieverzoek ontvangen voor de volgende database:
+%1
 
 Geef de verbinding een unieke naam of ID, voorbeeld:
 chrome-laptop</translation>
@@ -919,7 +928,7 @@ chrome-laptop</translation>
     </message>
     <message>
         <source>KeePassXC-Browser is needed for the browser integration to work. &lt;br /&gt;Download it for %1 and %2 and %3. %4</source>
-        <translation>KeePassXC-Browser is vereist om de integratie van de browser te laten werken.  &lt;br /&gt; download het voor %1 en %2 en %3. %4.</translation>
+        <translation>KeePassXC-Browser is nodig om de integratie met de browser te laten werken.  &lt;br /&gt; Download het voor %1 en %2 en %3. %4.</translation>
     </message>
     <message>
         <source>Please see special instructions for browser extension use below</source>
@@ -1110,7 +1119,7 @@ chrome-laptop</translation>
     <name>CsvParserModel</name>
     <message numerus="yes">
         <source>%n column(s)</source>
-        <translation><numerusform>1 kolom</numerusform><numerusform>%n kolom(men)</numerusform></translation>
+        <translation><numerusform>%n kolom</numerusform><numerusform>%n kolom(men)</numerusform></translation>
     </message>
     <message>
         <source>%1, %2, %3</source>
@@ -1236,7 +1245,7 @@ Het is raadzaam om een nieuw sleutelbestand te genereren.</translation>
     </message>
     <message>
         <source>Unlock KeePassXC Database</source>
-        <translation>Ontgrendel KeePassXC-database</translation>
+        <translation>KeePassXC-database ontgrendelen</translation>
     </message>
     <message>
         <source>Enter Password:</source>
@@ -1272,7 +1281,7 @@ Het is raadzaam om een nieuw sleutelbestand te genereren.</translation>
     </message>
     <message>
         <source>TouchID for Quick Unlock</source>
-        <translation>TouchID voor snelle ontgrendeling</translation>
+        <translation>Touch ID voor snelle ontgrendeling</translation>
     </message>
     <message>
         <source>Clear</source>
@@ -1302,7 +1311,7 @@ Om deze fout te voorkomen ga je naar &quot;Database instellingen.../Beveiliging&
     </message>
     <message>
         <source>Enter Additional Credentials (if any):</source>
-        <translation>Voer eventueel additionele inloggegevens in:</translation>
+        <translation>Voer eventuele aanvullende inloggegevens in:</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can use a hardware security key such as a &lt;strong&gt;YubiKey&lt;/strong&gt; or &lt;strong&gt;OnlyKey&lt;/strong&gt; with slots configured for HMAC-SHA1.&lt;/p&gt;
@@ -1527,7 +1536,7 @@ Dit is alleen nodig als je database een kopie is van een andere en de browserext
     <name>DatabaseSettingsWidgetDatabaseKey</name>
     <message>
         <source>Add additional protection...</source>
-        <translation>Extra beveiliging toevoegen...</translation>
+        <translation>Aanvullende beveiliging toevoegen...</translation>
     </message>
     <message>
         <source>No password set</source>
@@ -1781,7 +1790,7 @@ Als je dit aantal aanhoudt is het mogelijk heel gemakkelijk om de database te kr
     </message>
     <message>
         <source>Additional Database Settings</source>
-        <translation>Extra database-instellingen</translation>
+        <translation>Aanvullende database-instellingen</translation>
     </message>
     <message>
         <source>Database name field</source>
@@ -1989,7 +1998,7 @@ Dit is zeker een fout, rapporteer dit aan de ontwikkelaars.</translation>
     </message>
     <message numerus="yes">
         <source>Do you really want to move %n entry(s) to the recycle bin?</source>
-        <translation><numerusform>Wil je echt %n item naar de Prullenbak verplaatsen?</numerusform><numerusform>Weet je zeker dat je %n item(s) naar de prullenbak wilt verplaatsen?</numerusform></translation>
+        <translation><numerusform>Wil je echt %n item naar de Prullenbak verplaatsen?</numerusform><numerusform>Wil je echt %n items naar de Prullenbak verplaatsen?</numerusform></translation>
     </message>
     <message>
         <source>Execute command?</source>
@@ -2214,7 +2223,7 @@ Veilig opslaan uitschakelen en opnieuw proberen?</translation>
     </message>
     <message>
         <source>Edit entry</source>
-        <translation>Item wijzigen</translation>
+        <translation>Item bewerken</translation>
     </message>
     <message>
         <source>New attribute</source>
@@ -2289,7 +2298,7 @@ Veilig opslaan uitschakelen en opnieuw proberen?</translation>
     <name>EditEntryWidgetAdvanced</name>
     <message>
         <source>Additional attributes</source>
-        <translation>Extra kenmerken</translation>
+        <translation>Aanvullende kenmerken</translation>
     </message>
     <message>
         <source>Add</source>
@@ -2361,11 +2370,11 @@ Veilig opslaan uitschakelen en opnieuw proberen?</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, the entry will not appear in reports like Health Check and HIBP even if it doesn&apos;t match the quality requirements (e. g. password entropy or re-use). You can set the check mark if the password is beyond your control (e. g. if it needs to be a four-digit PIN) to prevent it from cluttering the reports.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Indien aangevinkt, zal het item niet verschijnen in rapporten zoals Health Check en HIBP, zelfs als het niet voldoet aan de kwaliteitseisen (bijv. wachtwoord-entropie of hergebruik). Je kunt het vinkje plaatsen als je geen controle hebt over het wachtwoord (bijvoorbeeld als het een viercijferige pincode moet zijn) om te voorkomen dat de rapporten onoverzichtelijk worden.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Indien aangevinkt, zal het item niet verschijnen in rapportages zoals Health Check en HIBP, zelfs als het niet voldoet aan de kwaliteitseisen (bijv. wachtwoord-entropie of -hergebruik). Je kunt het vinkje plaatsen als je geen controle hebt over het wachtwoord (bijvoorbeeld als het een viercijferige pincode moet zijn) om te voorkomen dat de rapportages onoverzichtelijk worden.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Exclude from database reports</source>
-        <translation>Uitsluiten van databaserapporten</translation>
+        <translation>Uitsluiten van databaserapportage</translation>
     </message>
 </context>
 <context>
@@ -2432,7 +2441,7 @@ Veilig opslaan uitschakelen en opnieuw proberen?</translation>
     </message>
     <message>
         <source>Inherit default Auto-Type sequence from the group</source>
-        <translation>Standaard auto-typevolgorde van de groep erven</translation>
+        <translation>Standaard auto-typevolgorde van de groep overnemen</translation>
     </message>
     <message>
         <source>Use custom Auto-Type sequence:</source>
@@ -2451,7 +2460,7 @@ Veilig opslaan uitschakelen en opnieuw proberen?</translation>
     </message>
     <message>
         <source>Skip Auto-Submit for this entry</source>
-        <translation>Automatisch versturen uitzetten voor dit item</translation>
+        <translation>Automatisch indienen uitschakelen voor dit item</translation>
     </message>
     <message>
         <source>Hide this entry from the browser extension</source>
@@ -2459,7 +2468,7 @@ Veilig opslaan uitschakelen en opnieuw proberen?</translation>
     </message>
     <message>
         <source>Additional URL&apos;s</source>
-        <translation>Extra URLs</translation>
+        <translation>Aanvullende URLs</translation>
     </message>
     <message>
         <source>Add</source>
@@ -2553,7 +2562,7 @@ Veilig opslaan uitschakelen en opnieuw proberen?</translation>
     </message>
     <message>
         <source>Download favicon for URL</source>
-        <translation>Pictogram downloaden voor URL</translation>
+        <translation>Favicon downloaden voor URL</translation>
     </message>
     <message>
         <source>Password field</source>
@@ -2964,7 +2973,7 @@ Ondersteund zijn: %1.</translation>
     </message>
     <message>
         <source>Download favicon for URL</source>
-        <translation>Pictogram downloaden voor URL</translation>
+        <translation>Favicon downloaden voor URL</translation>
     </message>
     <message>
         <source>Apply selected icon to subgroups and entries</source>
@@ -2988,11 +2997,11 @@ Ondersteund zijn: %1.</translation>
     </message>
     <message>
         <source>Use default icon</source>
-        <translation>Gebruik standaardicoon</translation>
+        <translation>Standaardpictogram gebruiken</translation>
     </message>
     <message>
         <source>Use custom icon</source>
-        <translation>Gebruik aangepast icoon</translation>
+        <translation>Aangepast pictogram gebruiken</translation>
     </message>
     <message>
         <source>Apply icon to...</source>
@@ -3610,7 +3619,7 @@ Je kunt de DuckDuckGo website pictogram dienst inschakelen in de sectie &apos;Be
     </message>
     <message>
         <source>Download Failed</source>
-        <translation>Downloaden is mislukt</translation>
+        <translation>Download is mislukt</translation>
     </message>
     <message>
         <source>Downloading favicons (%1/%2)...</source>
@@ -3884,7 +3893,7 @@ Deze actie is niet omkeerbaar. Je kunt de geïmporteerde database niet meer open
     </message>
     <message>
         <source>Invalid cipher uuid length: %1 (length=%2)</source>
-        <translation>Ongeldige versleuteling uuid lengte: %1 (lengte=2%)</translation>
+        <translation>Ongeldige versleuteling uuid lengte: %1 (lengte=%2)</translation>
     </message>
     <message>
         <source>Unable to parse UUID: %1</source>
@@ -4524,11 +4533,11 @@ Wij raden je aan om de AppImage te gebruiken welke beschikbaar is op onze downlo
     </message>
     <message>
         <source>Add a new entry</source>
-        <translation>Een nieuw item toevoegen</translation>
+        <translation>Nieuw item toevoegen</translation>
     </message>
     <message>
         <source>View or edit entry</source>
-        <translation>Bekijk/bewerk item</translation>
+        <translation>Item bekijken/bewerken</translation>
     </message>
     <message>
         <source>Add a new group</source>
@@ -4650,15 +4659,15 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
     </message>
     <message>
         <source>&amp;New Entry…</source>
-        <translation>&amp;Nieuw Item…</translation>
+        <translation>&amp;Nieuw item…</translation>
     </message>
     <message>
         <source>&amp;Edit Entry…</source>
-        <translation>&amp;Wijzig Item…</translation>
+        <translation>Item &amp;bewerken…</translation>
     </message>
     <message>
         <source>&amp;Delete Entry…</source>
-        <translation>&amp;Verwijder Item…</translation>
+        <translation>Item &amp;verwijderen…</translation>
     </message>
     <message>
         <source>&amp;New Group…</source>
@@ -4666,7 +4675,7 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
     </message>
     <message>
         <source>&amp;Edit Group…</source>
-        <translation>&amp;Wijzig Groep…</translation>
+        <translation>Groep &amp;bewerken…</translation>
     </message>
     <message>
         <source>&amp;Delete Group…</source>
@@ -4686,7 +4695,7 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
     </message>
     <message>
         <source>Database &amp;Reports...</source>
-        <translation>Database &amp;Rapporten...</translation>
+        <translation>Database-&amp;rapportage...</translation>
     </message>
     <message>
         <source>Statistics, health check, etc.</source>
@@ -4834,7 +4843,28 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
     </message>
     <message>
         <source>You must restart the application to apply this setting. Would you like to restart now?</source>
-        <translation>Je moet de applicatie opnieuw opstarten om deze instelling toe te passen. Wil je nu opnieuw opstarten?</translation>
+        <translation>Je moet de applicatie opnieuw opstarten om deze instelling toe te passen. 
+Wil je KeePassXC nu opnieuw opstarten?</translation>
+    </message>
+    <message>
+        <source>Perform Auto-Type Sequence</source>
+        <translation>Auto-type tekenreeks uitvoeren</translation>
+    </message>
+    <message>
+        <source>{USERNAME}</source>
+        <translation>{GEBRUIKERSNAAM}</translation>
+    </message>
+    <message>
+        <source>{USERNAME}{ENTER}</source>
+        <translation>{GEBRUIKERSNAAM}{ENTER}</translation>
+    </message>
+    <message>
+        <source>{PASSWORD}</source>
+        <translation>{WACHTWOORD}</translation>
+    </message>
+    <message>
+        <source>{PASSWORD}{ENTER}</source>
+        <translation>{WACHTWOORD}{ENTER}</translation>
     </message>
 </context>
 <context>
@@ -4931,11 +4961,11 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
     </message>
     <message>
         <source>Removed custom data %1 [%2]</source>
-        <translation>Gebruikersinstellingen verwijderd %1[%2]</translation>
+        <translation>Gebruikersinstellingen verwijderd %1 [%2]</translation>
     </message>
     <message>
         <source>Adding custom data %1 [%2]</source>
-        <translation>Gebruikersinstellingen toegevoegd %1[%2]</translation>
+        <translation>Gebruikersinstellingen toegevoegd %1 [%2]</translation>
     </message>
 </context>
 <context>
@@ -5298,7 +5328,7 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
     </message>
     <message>
         <source>Password Quality: %1</source>
-        <translation>Wachtwoordkwaliteit: %1</translation>
+        <translation>Kwaliteit: %1</translation>
     </message>
     <message>
         <source>Poor</source>
@@ -5321,10 +5351,6 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
         <translation>Uitstekend</translation>
     </message>
     <message>
-        <source>ExtendedASCII</source>
-        <translation>Uitgebreid ASCII</translation>
-    </message>
-    <message>
         <source>Switch to advanced mode</source>
         <translation>Overschakelen naar de geavanceerde modus</translation>
     </message>
@@ -5333,56 +5359,20 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
         <translation>Geavanceerd</translation>
     </message>
     <message>
-        <source>A-Z</source>
-        <translation>A-Z</translation>
-    </message>
-    <message>
-        <source>a-z</source>
-        <translation>a-z</translation>
-    </message>
-    <message>
-        <source>0-9</source>
-        <translation>0-9</translation>
-    </message>
-    <message>
         <source>Braces</source>
         <translation>Haakjes</translation>
-    </message>
-    <message>
-        <source>{[(</source>
-        <translation>{[(</translation>
     </message>
     <message>
         <source>Punctuation</source>
         <translation>Leestekens</translation>
     </message>
     <message>
-        <source>.,:;</source>
-        <translation>.,:;</translation>
-    </message>
-    <message>
         <source>Quotes</source>
         <translation>Aanhalingstekens</translation>
     </message>
     <message>
-        <source>&quot; &apos;</source>
-        <translation>&quot; &apos;</translation>
-    </message>
-    <message>
-        <source>&lt;*+!?=</source>
-        <translation>&lt;*+!? =</translation>
-    </message>
-    <message>
-        <source>\_|-/</source>
-        <translation>\_|-/</translation>
-    </message>
-    <message>
         <source>Logograms</source>
         <translation>Special tekens</translation>
-    </message>
-    <message>
-        <source>#$%&amp;&amp;@^`~</source>
-        <translation>#$%&amp;&amp;@^`~</translation>
     </message>
     <message>
         <source>Character set to exclude from generated password</source>
@@ -5446,7 +5436,7 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
     </message>
     <message>
         <source>Regenerate password</source>
-        <translation>Wachtwoord opnieuw genereren</translation>
+        <translation>Opnieuw genereren</translation>
     </message>
     <message>
         <source>Copy password</source>
@@ -5502,7 +5492,11 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
     </message>
     <message>
         <source>Regenerate password (%1)</source>
-        <translation>Wachtwoord opnieuw genereren (%1)</translation>
+        <translation>Òpnieuw genereren (%1)</translation>
+    </message>
+    <message>
+        <source>Special Characters</source>
+        <translation>Speciale tekens</translation>
     </message>
 </context>
 <context>
@@ -5561,7 +5555,7 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
     </message>
     <message>
         <source>Health Check</source>
-        <translation>Gezondheidscontrole</translation>
+        <translation>Gezondheid</translation>
     </message>
     <message>
         <source>HIBP</source>
@@ -5615,7 +5609,7 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
     </message>
     <message>
         <source>Database hash not available</source>
-        <translation>Database-controlecijfer is niet beschikbaar</translation>
+        <translation>Database-hashwaarde is niet beschikbaar</translation>
     </message>
     <message>
         <source>Client public key not received</source>
@@ -5728,7 +5722,7 @@ Houd rekening met fouten en kleine problemen. Deze versie is niet bedoeld voor r
     </message>
     <message>
         <source>Path of the entry to edit.</source>
-        <translation>Pad van het te wijzigen item.</translation>
+        <translation>Pad van het te bewerken item.</translation>
     </message>
     <message>
         <source>Estimate the entropy of a password.</source>
@@ -6042,7 +6036,7 @@ Beschikbare opdrachten:
     </message>
     <message>
         <source>Entropy %1 (%2)</source>
-        <translation>Entropie %1 (2 %)</translation>
+        <translation>Entropie %1 (%2)</translation>
     </message>
     <message>
         <source>*** Password length (%1) != sum of length of parts (%2) ***</source>
@@ -6136,7 +6130,7 @@ Beschikbare opdrachten:
     </message>
     <message>
         <source>%1: (row, col) %2,%3</source>
-        <translation>%1: (rij, col) 2%,3%</translation>
+        <translation>%1: (rij, col) %2,%3</translation>
     </message>
     <message>
         <source>Argon2 (KDBX 4 – recommended)</source>
@@ -6574,7 +6568,7 @@ Kernelversie: %3 %4</translation>
     </message>
     <message>
         <source>Copy the given attribute to the clipboard. Defaults to &quot;password&quot; if not specified.</source>
-        <translation>Kopieer het gegeven kenmerk naar het klembord. Dit is &quot;password&quot; tenzij anders gespecificeerd.</translation>
+        <translation>Kopieer het gegeven kenmerk naar het klembord. Dit is &quot;wachtwoord&quot; tenzij anders gespecificeerd.</translation>
     </message>
     <message>
         <source>Copy the current TOTP to the clipboard (equivalent to &quot;-a totp&quot;).</source>
@@ -6590,7 +6584,7 @@ Kernelversie: %3 %4</translation>
     </message>
     <message>
         <source>ERROR: attribute %1 is ambiguous, it matches %2.</source>
-        <translation>FOUT: attribuut %1 is dubbelzinnig, het komt overeen met %2.</translation>
+        <translation>FOUT: kenmerk %1 is dubbelzinnig, het komt overeen met %2.</translation>
     </message>
     <message>
         <source>Attribute &quot;%1&quot; not found.</source>
@@ -6791,7 +6785,7 @@ Kernelversie: %3 %4</translation>
     <name>ReportsWidgetHealthcheck</name>
     <message>
         <source>Also show entries that have been excluded from reports</source>
-        <translation>Toon ook vermeldingen die zijn uitgesloten van rapporten</translation>
+        <translation>Toon ook vermeldingen die zijn uitgesloten van rapportage</translation>
     </message>
     <message>
         <source>Hover over reason to show additional details. Double-click entries to edit.</source>
@@ -6830,11 +6824,11 @@ Kernelversie: %3 %4</translation>
     </message>
     <message>
         <source>This entry is being excluded from reports</source>
-        <translation>Dit item wordt uitgesloten van rapporten</translation>
+        <translation>Dit item wordt uitgesloten van rapportage</translation>
     </message>
     <message>
         <source>Please wait, health data is being calculated...</source>
-        <translation>Even geduld, gezondheidsgegevens worden vergaard...</translation>
+        <translation>Even geduld, gezondheidsgegevens worden verzameld...</translation>
     </message>
     <message>
         <source>Congratulations, everything is healthy!</source>
@@ -6862,14 +6856,14 @@ Kernelversie: %3 %4</translation>
     </message>
     <message>
         <source>Exclude from reports</source>
-        <translation>Uitsluiten van rapporten</translation>
+        <translation>Uitsluiten van rapportage</translation>
     </message>
 </context>
 <context>
     <name>ReportsWidgetHibp</name>
     <message>
         <source>CAUTION: This report requires sending information to the Have I Been Pwned online service (https://haveibeenpwned.com). If you proceed, your database passwords will be cryptographically hashed and the first five characters of those hashes will be sent securely to this service. Your database remains secure and cannot be reconstituted from this information. However, the number of passwords you send and your IP address will be exposed to this service.</source>
-        <translation>LET OP: Voor dit rapport wordt informatie verzonden naar de online dienst Have I Been Pwned (https://haveibeenpwned.com). Als je doorgaat, worden je databasewachtwoorden cryptografisch gehasht en worden de eerste vijf tekens van die hashes op veilige wijze verzonden naar deze dienst. Jouw database blijft veilig en kan uit deze informatie niet worden samengesteld. Het aantal wachtwoorden dat je verzendt en je IP-adres worden wel blootgesteld aan deze dienst.</translation>
+        <translation>LET OP: Voor deze rapportage wordt informatie verzonden naar de online dienst Have I Been Pwned (HIBP) (https://haveibeenpwned.com). Als je doorgaat, worden je databasewachtwoorden cryptografisch gehasht en worden de eerste vijf tekens van die hashes op veilige wijze verzonden naar deze dienst. Jouw database blijft veilig en kan uit deze informatie niet worden samengesteld. Het aantal wachtwoorden dat je verzendt en je IP-adres worden wel blootgesteld aan deze dienst.</translation>
     </message>
     <message>
         <source>Perform Online Analysis</source>
@@ -6877,7 +6871,7 @@ Kernelversie: %3 %4</translation>
     </message>
     <message>
         <source>Also show entries that have been excluded from reports</source>
-        <translation>Toon ook vermeldingen die zijn uitgesloten van rapporten</translation>
+        <translation>Toon ook vermeldingen die zijn uitgesloten van rapportage</translation>
     </message>
     <message>
         <source>This build of KeePassXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
@@ -6905,7 +6899,7 @@ Kernelversie: %3 %4</translation>
     </message>
     <message>
         <source>This entry is being excluded from reports</source>
-        <translation>Dit item wordt uitgesloten van rapporten</translation>
+        <translation>Dit item wordt uitgesloten van rapportage</translation>
     </message>
     <message>
         <source>once</source>
@@ -6945,7 +6939,7 @@ Kernelversie: %3 %4</translation>
     </message>
     <message>
         <source>Exclude from reports</source>
-        <translation>Uitsluiten van rapporten</translation>
+        <translation>Uitsluiten van rapportage</translation>
     </message>
 </context>
 <context>
@@ -7052,11 +7046,11 @@ Kernelversie: %3 %4</translation>
     </message>
     <message>
         <source>Entries excluded from reports</source>
-        <translation>Items die zijn uitgesloten van rapporten</translation>
+        <translation>Items die zijn uitgesloten van rapportage</translation>
     </message>
     <message>
         <source>Excluding entries from reports, e. g. because they are known to have a poor password, isn&apos;t necessarily a problem but you should keep an eye on them.</source>
-        <translation>Het uitsluiten van vermeldingen uit rapporten, bijv. omdat al bekend is dat ze een slecht wachtwoord hebben, is niet per se een probleem, maar je moet ze wel in de gaten houden.</translation>
+        <translation>Het uitsluiten van vermeldingen uit rapportage, bijv. omdat al bekend is dat ze een slecht wachtwoord hebben, is niet per se een probleem, maar je moet ze wel in de gaten houden.</translation>
     </message>
     <message>
         <source>Average password length</source>

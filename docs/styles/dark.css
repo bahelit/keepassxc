@@ -455,6 +455,8 @@ p{font-family: "Noto Sans",sans-serif !important}
 blockquote{color:var(--quotecolor) !important}
 .quoteblock{color:var(--textcolor)}
 code{color:var(--textcoloralt);background-color: var(--sidebarbackground) !important}
+pre,pre>code{line-height:1.25; color:var(--textcoloralt);}
+.keyseq{color:var(--textcoloralt);}
 
 
 /* Table styles */
@@ -468,13 +470,6 @@ td{background-color: var(--background);color: var(--textcoloralt) !important;}
 /* Responsiveness fixes */
 video {
   max-width: 100%;
-}
-
-@media all and (max-width: 600px) {
-  table {
-    width: 55vw!important;
-    font-size: 3vw;
-  }
 }
 
 .exampleblock > .content {

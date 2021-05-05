@@ -81,7 +81,8 @@ public:
     void releaseData();
 
     bool isInitialized() const;
-    bool isModified(bool includeNonDataChanges = false) const;
+    bool isModified() const;
+    bool hasNonDataChanges() const;
     void setEmitModified(bool value);
     bool isReadOnly() const;
     void setReadOnly(bool readOnly);
@@ -201,6 +202,8 @@ private:
     bool backupDatabase(const QString& filePath);
     bool restoreDatabase(const QString& filePath);
     bool performSave(const QString& filePath, QString* error, bool atomic, bool backup);
+    void startModifiedTimer();
+    void stopModifiedTimer();
 
     QPointer<Metadata> const m_metadata;
     DatabaseData m_data;

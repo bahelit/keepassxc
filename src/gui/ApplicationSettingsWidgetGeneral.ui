@@ -253,14 +253,14 @@
               <item>
                <widget class="QCheckBox" name="autoSaveOnExitCheckBox">
                 <property name="text">
-                 <string>Automatically save on exit</string>
+                 <string>Automatically save when locking database</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="trackNonDataChangesCheckBox">
+               <widget class="QCheckBox" name="autoSaveNonDataChangesCheckBox">
                 <property name="text">
-                 <string>Mark database as modified for non-data changes (e.g., expanding groups)</string>
+                 <string>Automatically save non-data changes when locking database</string>
                 </property>
                </widget>
               </item>
@@ -626,6 +626,12 @@
                     <verstretch>0</verstretch>
                    </sizepolicy>
                   </property>
+                  <property name="focusPolicy">
+                   <enum>Qt::StrongFocus</enum>
+                  </property>
+                  <property name="accessibleName">
+                   <string>Tray icon type</string>
+                  </property>
                  </widget>
                 </item>
                 <item row="0" column="1">
@@ -845,6 +851,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="autoTypeHideExpiredEntryCheckBox">
+         <property name="text">
+          <string>Hide expired entries from Auto-Type</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="verticalSpacer_4">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -1031,7 +1044,7 @@
   <tabstop>checkForUpdatesIncludeBetasCheckBox</tabstop>
   <tabstop>autoSaveAfterEveryChangeCheckBox</tabstop>
   <tabstop>autoSaveOnExitCheckBox</tabstop>
-  <tabstop>trackNonDataChangesCheckBox</tabstop>
+  <tabstop>autoSaveNonDataChangesCheckBox</tabstop>
   <tabstop>backupBeforeSaveCheckBox</tabstop>
   <tabstop>autoReloadOnChangeCheckBox</tabstop>
   <tabstop>useAtomicSavesCheckBox</tabstop>

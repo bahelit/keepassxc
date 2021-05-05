@@ -24,9 +24,9 @@
 
 #include <QJsonDocument>
 #include <QJsonParseError>
-#include <sodium.h>
-#include <sodium/crypto_box.h>
-#include <sodium/randombytes.h>
+#include <botan/sodium.h>
+
+using namespace Botan::Sodium;
 
 namespace
 {
@@ -107,6 +107,8 @@ QJsonObject BrowserAction::handleAction(const QJsonObject& json)
         return handleGetDatabaseGroups(json, action);
     } else if (action.compare("create-new-group", Qt::CaseSensitive) == 0) {
         return handleCreateNewGroup(json, action);
+    } else if (action.compare("get-totp", Qt::CaseSensitive) == 0) {
+        return handleGetTotp(json, action);
     }
 
     // Action was not recognized
@@ -265,8 +267,8 @@ QJsonObject BrowserAction::handleGetLogins(const QJsonObject& json, const QStrin
         return getErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
     }
 
-    const QString url = decrypted.value("url").toString();
-    if (url.isEmpty()) {
+    const QString siteUrl = decrypted.value("url").toString();
+    if (siteUrl.isEmpty()) {
         return getErrorReply(action, ERROR_KEEPASS_NO_URL_PROVIDED);
     }
 
@@ -279,10 +281,10 @@ QJsonObject BrowserAction::handleGetLogins(const QJsonObject& json, const QStrin
     }
 
     const QString id = decrypted.value("id").toString();
-    const QString submit = decrypted.value("submitUrl").toString();
+    const QString formUrl = decrypted.value("submitUrl").toString();
     const QString auth = decrypted.value("httpAuth").toString();
-    const bool httpAuth = auth.compare(TRUE_STR, Qt::CaseSensitive) == 0 ? true : false;
-    const QJsonArray users = browserService()->findMatchingEntries(id, url, submit, "", keyList, httpAuth);
+    const bool httpAuth = auth.compare(TRUE_STR, Qt::CaseSensitive) == 0;
+    const QJsonArray users = browserService()->findMatchingEntries(id, siteUrl, formUrl, "", keyList, httpAuth);
 
     if (users.isEmpty()) {
         return getErrorReply(action, ERROR_KEEPASS_NO_LOGINS_FOUND);
@@ -461,6 +463,37 @@ QJsonObject BrowserAction::handleCreateNewGroup(const QJsonObject& json, const Q
     QJsonObject message = buildMessage(newNonce);
     message["name"] = newGroup["name"];
     message["uuid"] = newGroup["uuid"];
+
+    return buildResponse(action, message, newNonce);
+}
+
+QJsonObject BrowserAction::handleGetTotp(const QJsonObject& json, const QString& action)
+{
+    const QString nonce = json.value("nonce").toString();
+    const QString encrypted = json.value("message").toString();
+
+    if (!m_associated) {
+        return getErrorReply(action, ERROR_KEEPASS_ASSOCIATION_FAILED);
+    }
+
+    const QJsonObject decrypted = decryptMessage(encrypted, nonce);
+    if (decrypted.isEmpty()) {
+        return getErrorReply(action, ERROR_KEEPASS_CANNOT_DECRYPT_MESSAGE);
+    }
+
+    QString command = decrypted.value("action").toString();
+    if (command.isEmpty() || command.compare("get-totp", Qt::CaseSensitive) != 0) {
+        return getErrorReply(action, ERROR_KEEPASS_INCORRECT_ACTION);
+    }
+
+    const QString uuid = decrypted.value("uuid").toString();
+
+    // Get the current TOTP
+    const auto totp = browserService()->getCurrentTotp(uuid);
+    const QString newNonce = incrementNonce(nonce);
+
+    QJsonObject message = buildMessage(newNonce);
+    message["totp"] = totp;
 
     return buildResponse(action, message, newNonce);
 }

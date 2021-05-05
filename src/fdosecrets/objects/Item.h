@@ -18,8 +18,8 @@
 #ifndef KEEPASSXC_FDOSECRETS_ITEM_H
 #define KEEPASSXC_FDOSECRETS_ITEM_H
 
-#include "fdosecrets/objects/DBusObject.h"
-#include "fdosecrets/objects/adaptors/ItemAdaptor.h"
+#include "fdosecrets/dbus/DBusClient.h"
+#include "fdosecrets/dbus/DBusObject.h"
 
 #include <QPointer>
 
@@ -41,24 +41,36 @@ namespace FdoSecrets
     class Item : public DBusObject
     {
         Q_OBJECT
-    public:
+        Q_CLASSINFO("D-Bus Interface", DBUS_INTERFACE_SECRET_ITEM_LITERAL)
+
         explicit Item(Collection* parent, Entry* backend);
 
-        DBusReturn<bool> locked() const;
+    public:
+        /**
+         * @brief Create a new instance of `Item`.
+         * @param parent the owning `Collection`
+         * @param backend the `Entry` containing the data
+         * @return pointer to newly created Item, or nullptr if error
+         * This may be caused by
+         *   - DBus path registration error
+         */
+        static Item* Create(Collection* parent, Entry* backend);
 
-        DBusReturn<const StringStringMap> attributes() const;
-        DBusReturn<void> setAttributes(const StringStringMap& attrs);
+        Q_INVOKABLE DBUS_PROPERTY DBusResult locked(const DBusClientPtr& client, bool& locked) const;
 
-        DBusReturn<QString> label() const;
-        DBusReturn<void> setLabel(const QString& label);
+        Q_INVOKABLE DBUS_PROPERTY DBusResult attributes(StringStringMap& attrs) const;
+        Q_INVOKABLE DBusResult setAttributes(const StringStringMap& attrs);
 
-        DBusReturn<qulonglong> created() const;
+        Q_INVOKABLE DBUS_PROPERTY DBusResult label(QString& label) const;
+        Q_INVOKABLE DBusResult setLabel(const QString& label);
 
-        DBusReturn<qulonglong> modified() const;
+        Q_INVOKABLE DBUS_PROPERTY DBusResult created(qulonglong& created) const;
 
-        DBusReturn<PromptBase*> deleteItem();
-        DBusReturn<SecretStruct> getSecret(Session* session);
-        DBusReturn<void> setSecret(const SecretStruct& secret);
+        Q_INVOKABLE DBUS_PROPERTY DBusResult modified(qulonglong& modified) const;
+
+        Q_INVOKABLE DBusResult remove(PromptBase*& prompt);
+        Q_INVOKABLE DBusResult getSecret(const DBusClientPtr& client, Session* session, Secret& secret);
+        Q_INVOKABLE DBusResult setSecret(const DBusClientPtr& client, const Secret& secret);
 
     signals:
         void itemChanged();
@@ -67,7 +79,8 @@ namespace FdoSecrets
     public:
         static const QSet<QString> ReadOnlyAttributes;
 
-        DBusReturn<void> setProperties(const QVariantMap& properties);
+        DBusResult getSecretNoNotification(const DBusClientPtr& client, Session* session, Secret& secret) const;
+        DBusResult setProperties(const QVariantMap& properties);
 
         Entry* backend() const;
         Collection* collection() const;
@@ -79,34 +92,26 @@ namespace FdoSecrets
          */
         QString path() const;
 
-        /**
-         * If the containing db does not have recycle bin enabled,
-         * or the entry is already in the recycle bin (not possible for item, though),
-         * the delete is permanent
-         * @return true if delete is permanent
-         */
-        bool isDeletePermanent() const;
-
     public slots:
         void doDelete();
 
-    private:
         /**
          * Check if the backend is a valid object, send error reply if not.
          * @return No error if the backend is valid.
          */
-        DBusReturn<void> ensureBackend() const;
+        DBusResult ensureBackend() const;
 
         /**
          * Ensure the database is unlocked, send error reply if locked.
          * @return true if the database is locked
          */
-        DBusReturn<void> ensureUnlocked() const;
+        DBusResult ensureUnlocked() const;
 
     private:
         QPointer<Entry> m_backend;
     };
 
 } // namespace FdoSecrets
+Q_DECLARE_METATYPE(FdoSecrets::ItemSecretMap);
 
 #endif // KEEPASSXC_FDOSECRETS_ITEM_H

@@ -1,7 +1,7 @@
 /*
  *  Copyright (C) 2012 Tobias Tangemann
  *  Copyright (C) 2012 Felix Geyer <debfx@fobos.de>
- *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
+ *  Copyright (C) 2020 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -41,6 +41,8 @@ public:
     Application(int& argc, char** argv);
     ~Application() override;
 
+    static void bootstrap();
+
     void applyTheme();
 
     bool event(QEvent* event) override;
@@ -79,9 +81,6 @@ private:
     QLockFile* m_lockFile;
     QLocalServer m_lockServer;
     QString m_socketName;
-#if defined(Q_OS_WIN) || (defined(Q_OS_UNIX) && !defined(Q_OS_MACOS))
-    QScopedPointer<OSEventFilter> m_osEventFilter;
-#endif
 };
 
 #define kpxcApp qobject_cast<Application*>(Application::instance())

@@ -15,20 +15,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cstdlib>
-#include <stdio.h>
-
-#include <QFileInfo>
-#include <QString>
-#include <QTextStream>
-
 #include "Import.h"
 
-#include "cli/TextStream.h"
-#include "cli/Utils.h"
-#include "core/Database.h"
-#include "keys/CompositeKey.h"
-#include "keys/Key.h"
+#include "Create.h"
+#include "Utils.h"
+
+#include <QFileInfo>
 
 /**
  * Create a database file from an XML export of another database.
@@ -40,12 +32,16 @@
  *
  * @return EXIT_SUCCESS on success, or EXIT_FAILURE on failure
  */
+
 Import::Import()
 {
     name = QString("import");
     description = QObject::tr("Import the contents of an XML database.");
     positionalArguments.append({QString("xml"), QObject::tr("Path of the XML database export."), QString("")});
     positionalArguments.append({QString("database"), QObject::tr("Path of the new database."), QString("")});
+    options.append(Create::SetKeyFileOption);
+    options.append(Create::SetPasswordOption);
+    options.append(Create::DecryptionTimeOption);
 }
 
 int Import::execute(const QStringList& arguments)
@@ -67,31 +63,18 @@ int Import::execute(const QStringList& arguments)
         return EXIT_FAILURE;
     }
 
-    auto key = QSharedPointer<CompositeKey>::create();
-
-    auto passwordKey = Utils::getConfirmedPassword();
-    if (passwordKey.isNull()) {
-        err << QObject::tr("Failed to set database password.") << endl;
-        return EXIT_FAILURE;
-    }
-    key->addKey(passwordKey);
-
-    if (key->isEmpty()) {
-        err << QObject::tr("No key is set. Aborting database creation.") << endl;
+    QSharedPointer<Database> db = Create::initializeDatabaseFromOptions(parser);
+    if (!db) {
         return EXIT_FAILURE;
     }
 
     QString errorMessage;
-    Database db;
-    db.setKdf(KeePass2::uuidToKdf(KeePass2::KDF_ARGON2));
-    db.setKey(key);
-
-    if (!db.import(xmlExportPath, &errorMessage)) {
+    if (!db->import(xmlExportPath, &errorMessage)) {
         err << QObject::tr("Unable to import XML database: %1").arg(errorMessage) << endl;
         return EXIT_FAILURE;
     }
 
-    if (!db.saveAs(dbPath, &errorMessage, true, false)) {
+    if (!db->saveAs(dbPath, &errorMessage, true, false)) {
         err << QObject::tr("Failed to save the database: %1.").arg(errorMessage) << endl;
         return EXIT_FAILURE;
     }

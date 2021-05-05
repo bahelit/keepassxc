@@ -15,19 +15,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cstdlib>
-#include <stdio.h>
-
 #include "Edit.h"
 
-#include "cli/Add.h"
-#include "cli/Generate.h"
-#include "cli/TextStream.h"
-#include "cli/Utils.h"
-#include "core/Database.h"
+#include "Add.h"
+#include "Generate.h"
+#include "Utils.h"
 #include "core/Entry.h"
 #include "core/Group.h"
-#include "core/PasswordGenerator.h"
 
 const QCommandLineOption Edit::TitleOption = QCommandLineOption(QStringList() << "t"
                                                                               << "title",
@@ -41,6 +35,7 @@ Edit::Edit()
     // Using some of the options from the Add command since they are the same.
     options.append(Add::UsernameOption);
     options.append(Add::UrlOption);
+    options.append(Add::NotesOption);
     options.append(Add::PasswordPromptOption);
     options.append(Edit::TitleOption);
     positionalArguments.append({QString("entry"), QObject::tr("Path of the entry to edit."), QString("")});
@@ -68,7 +63,7 @@ int Edit::executeWithDatabase(QSharedPointer<Database> database, QSharedPointer<
 
     // Cannot use those 2 options at the same time!
     if (parser->isSet(Add::GenerateOption) && parser->isSet(Add::PasswordPromptOption)) {
-        err << QObject::tr("Cannot generate a password and prompt at the same time!") << endl;
+        err << QObject::tr("Cannot generate a password and prompt at the same time.") << endl;
         return EXIT_FAILURE;
     }
 
@@ -91,9 +86,10 @@ int Edit::executeWithDatabase(QSharedPointer<Database> database, QSharedPointer<
 
     QString username = parser->value(Add::UsernameOption);
     QString url = parser->value(Add::UrlOption);
+    QString notes = parser->value(Add::NotesOption);
     QString title = parser->value(Edit::TitleOption);
     bool prompt = parser->isSet(Add::PasswordPromptOption);
-    if (username.isEmpty() && url.isEmpty() && title.isEmpty() && !prompt && !generate) {
+    if (username.isEmpty() && url.isEmpty() && notes.isEmpty() && title.isEmpty() && !prompt && !generate) {
         err << QObject::tr("Not changing any field for entry %1.").arg(entryPath) << endl;
         return EXIT_FAILURE;
     }
@@ -106,6 +102,10 @@ int Edit::executeWithDatabase(QSharedPointer<Database> database, QSharedPointer<
 
     if (!username.isEmpty()) {
         entry->setUsername(username);
+    }
+
+    if (!notes.isEmpty()) {
+        entry->setNotes(notes.replace("\\n", "\n"));
     }
 
     if (!url.isEmpty()) {
